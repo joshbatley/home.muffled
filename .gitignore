@@ -5,4 +5,3 @@ monitoring/prometheus/data/*
 
 monitoring/grafana/data/*
 !monitoring/grafana/data/.gitkeep
-!monitoring/grafana/data/grafana.db
