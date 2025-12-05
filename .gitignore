@@ -1,1 +1,8 @@
 .DS_Store
+# Ignore contents of Prometheus and Grafana data dirs, but keep the dirs themselves
+monitoring/prometheus/data/*
+!monitoring/prometheus/data/.gitkeep
+
+monitoring/grafana/data/*
+!monitoring/grafana/data/.gitkeep
+!monitoring/grafana/data/grafana.db
