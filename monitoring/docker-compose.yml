@@ -27,3 +27,6 @@ services:
             - GF_INSTALL_PLUGINS=grafana-piechart-panel
         restart: unless-stopped
 
+volumes:
+    prometheus-data:
+    grafana-data:
