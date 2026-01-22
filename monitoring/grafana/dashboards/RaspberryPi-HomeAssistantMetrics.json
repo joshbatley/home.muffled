@@ -24,8 +24,8 @@
   "panels": [
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "name": "MacMiniMetrics",
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -118,8 +118,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "name": "MacMiniMetrics",
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -210,8 +210,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "name": "MacMiniMetrics",
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -304,8 +304,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "name": "MacMiniMetrics",
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -398,8 +398,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "name": "MacMiniMetrics",
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -496,8 +496,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "name": "MacMiniMetrics",
+        "type": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -602,20 +602,7 @@
     "raspberry-pi"
   ],
   "templating": {
-    "list": [
-      {
-        "current": {
-          "text": "MacMiniMetrics",
-          "value": "af5v95f7ouj28b"
-        },
-        "label": "Prometheus",
-        "name": "DS_PROMETHEUS",
-        "options": [],
-        "query": "prometheus",
-        "refresh": 1,
-        "type": "datasource"
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-30m",
