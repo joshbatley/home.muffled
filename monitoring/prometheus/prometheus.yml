@@ -7,3 +7,9 @@ scrape_configs:
     static_configs:
       - targets: ["host.docker.internal:9100"]
 
+  - job_name: "homeassistant"
+    metrics_path: /api/prometheus
+    scheme: http
+    scrape_interval: 30s
+    static_configs:
+        - targets: ["homeassistant.local:8123"]
