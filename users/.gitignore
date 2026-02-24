@@ -1,0 +1,41 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+cmd/authservice/authservice
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Go workspace file
+go.work
+
+# Environment files
+.env
+.env.local
+
+# IDE - JetBrains
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker volumes and data
+*.db
+postgres-data/
+pgdata/
+
+# Temporary files
+*.tmp
+*.log
+
+tasks
+.aiassistant
