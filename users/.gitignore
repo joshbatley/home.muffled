@@ -38,4 +38,4 @@ pgdata/
 *.log
 
 tasks
-.aiassistant
+.cursor
