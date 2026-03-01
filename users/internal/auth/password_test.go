@@ -7,6 +7,7 @@ func TestHashPassword_and_compare_succeeds(t *testing.T) {
 
 	hash, err := HashPassword(password)
 	if err != nil {
+
 		t.Fatalf("HashPassword() error = %v", err)
 	}
 

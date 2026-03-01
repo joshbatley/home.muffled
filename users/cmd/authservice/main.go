@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -9,6 +10,8 @@ import (
 	"users/internal/auth"
 	"users/internal/config"
 	"users/internal/database"
+	"users/internal/role"
+	"users/internal/seed"
 	"users/internal/user"
 )
 
@@ -26,7 +29,14 @@ func main() {
 	defer db.Close()
 
 	userStore := user.NewPostgresStore(db)
+	roleStore := role.NewPostgresStore(db)
 	refreshStore := auth.NewRefreshTokenStore(db)
+
+	// Seed admin user
+	if err := seed.SeedAdminWithRole(context.Background(), userStore, roleStore, cfg.SeedUsername, cfg.SeedPassword); err != nil {
+		log.Fatalf("failed to seed admin: %v", err)
+	}
+	log.Printf("Admin user seeded: %s", cfg.SeedUsername)
 
 	authHandler := handler.NewAuthHandler(handler.AuthHandlerConfig{
 		UserStore:       userStore,
