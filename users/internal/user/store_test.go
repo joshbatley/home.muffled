@@ -28,7 +28,7 @@ func TestPostgresStore_Create(t *testing.T) {
 	}
 
 	mock.ExpectExec("INSERT INTO users").
-		WithArgs(user.ID, user.Username, user.PasswordHash, user.ForcePasswordChange).
+		WithArgs(user.ID, user.Username, user.PasswordHash, user.ForcePasswordChange, sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	if err := store.Create(ctx, user); err != nil {
@@ -53,8 +53,8 @@ func TestPostgresStore_GetByID(t *testing.T) {
 	id := uuid.New()
 	now := time.Now()
 
-	rows := sqlmock.NewRows([]string{"id", "username", "password_hash", "force_password_change", "created_at", "updated_at"}).
-		AddRow(id, "testuser", "hashedpassword", false, now, now)
+	rows := sqlmock.NewRows([]string{"id", "username", "password_hash", "force_password_change", "avatar_url", "created_at", "updated_at"}).
+		AddRow(id, "testuser", "hashedpassword", false, nil, now, now)
 
 	mock.ExpectQuery("SELECT .+ FROM users WHERE id = \\$1").
 		WithArgs(id).
@@ -116,8 +116,8 @@ func TestPostgresStore_GetByUsername(t *testing.T) {
 	id := uuid.New()
 	now := time.Now()
 
-	rows := sqlmock.NewRows([]string{"id", "username", "password_hash", "force_password_change", "created_at", "updated_at"}).
-		AddRow(id, "findme", "hashedpassword", false, now, now)
+	rows := sqlmock.NewRows([]string{"id", "username", "password_hash", "force_password_change", "avatar_url", "created_at", "updated_at"}).
+		AddRow(id, "findme", "hashedpassword", false, nil, now, now)
 
 	mock.ExpectQuery("SELECT .+ FROM users WHERE username = \\$1").
 		WithArgs("findme").
@@ -149,9 +149,9 @@ func TestPostgresStore_List(t *testing.T) {
 
 	now := time.Now()
 
-	rows := sqlmock.NewRows([]string{"id", "username", "password_hash", "force_password_change", "created_at", "updated_at"}).
-		AddRow(uuid.New(), "user1", "hash1", false, now, now).
-		AddRow(uuid.New(), "user2", "hash2", false, now, now)
+	rows := sqlmock.NewRows([]string{"id", "username", "password_hash", "force_password_change", "avatar_url", "created_at", "updated_at"}).
+		AddRow(uuid.New(), "user1", "hash1", false, nil, now, now).
+		AddRow(uuid.New(), "user2", "hash2", false, nil, now, now)
 
 	mock.ExpectQuery("SELECT .+ FROM users").
 		WillReturnRows(rows)
@@ -188,7 +188,7 @@ func TestPostgresStore_Update(t *testing.T) {
 	}
 
 	mock.ExpectExec("UPDATE users SET").
-		WithArgs(user.Username, user.PasswordHash, user.ForcePasswordChange, sqlmock.AnyArg(), user.ID).
+		WithArgs(user.Username, user.PasswordHash, user.ForcePasswordChange, sqlmock.AnyArg(), sqlmock.AnyArg(), user.ID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	if err := store.Update(ctx, user); err != nil {
@@ -216,12 +216,58 @@ func TestPostgresStore_Update_NotFound(t *testing.T) {
 	}
 
 	mock.ExpectExec("UPDATE users SET").
-		WithArgs(user.Username, user.PasswordHash, user.ForcePasswordChange, sqlmock.AnyArg(), user.ID).
+		WithArgs(user.Username, user.PasswordHash, user.ForcePasswordChange, sqlmock.AnyArg(), sqlmock.AnyArg(), user.ID).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
 	err = store.Update(ctx, user)
 	if !errors.Is(err, ErrNotFound) {
 		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unfulfilled expectations: %v", err)
+	}
+}
+
+func TestPostgresStore_AvatarURL_RoundTrip(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	store := NewPostgresStore(db)
+	ctx := t.Context()
+
+	id := uuid.New()
+	now := time.Now()
+	avatarURL := "https://example.com/avatar.png"
+
+	// Create with avatar_url
+	user := &User{
+		ID:                  id,
+		Username:            "avataruser",
+		PasswordHash:        "hash",
+		ForcePasswordChange: false,
+		AvatarURL:           avatarURL,
+	}
+	mock.ExpectExec("INSERT INTO users").
+		WithArgs(user.ID, user.Username, user.PasswordHash, user.ForcePasswordChange, sqlmock.AnyArg()).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	if err := store.Create(ctx, user); err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	// GetByID returns avatar_url
+	rows := sqlmock.NewRows([]string{"id", "username", "password_hash", "force_password_change", "avatar_url", "created_at", "updated_at"}).
+		AddRow(id, "avataruser", "hash", false, avatarURL, now, now)
+	mock.ExpectQuery("SELECT .+ FROM users WHERE id = \\$1").WithArgs(id).WillReturnRows(rows)
+	got, err := store.GetByID(ctx, id)
+	if err != nil {
+		t.Fatalf("GetByID failed: %v", err)
+	}
+	if got.AvatarURL != avatarURL {
+		t.Errorf("AvatarURL = %q, want %q", got.AvatarURL, avatarURL)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -245,7 +291,7 @@ func TestPostgresStore_CreateDuplicateUsername(t *testing.T) {
 	}
 
 	mock.ExpectExec("INSERT INTO users").
-		WithArgs(user.ID, user.Username, user.PasswordHash, user.ForcePasswordChange).
+		WithArgs(user.ID, user.Username, user.PasswordHash, user.ForcePasswordChange, sqlmock.AnyArg()).
 		WillReturnError(errors.New("pq: duplicate key value violates unique constraint"))
 
 	err = store.Create(ctx, user)

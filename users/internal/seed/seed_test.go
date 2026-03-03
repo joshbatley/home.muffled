@@ -135,11 +135,46 @@ func (m *mockRoleStore) CreateRole(ctx context.Context, name string) (*role.Role
 	return r, nil
 }
 
+func (m *mockRoleStore) GetByID(ctx context.Context, id uuid.UUID) (*role.Role, error) {
+	for _, r := range m.roles {
+		if r.ID == id {
+			return r, nil
+		}
+	}
+	return nil, role.ErrNotFound
+}
+
 func (m *mockRoleStore) GetRoleByName(ctx context.Context, name string) (*role.Role, error) {
 	if r, ok := m.roles[name]; ok {
 		return r, nil
 	}
 	return nil, role.ErrNotFound
+}
+
+func (m *mockRoleStore) List(ctx context.Context) ([]role.Role, error) {
+	var out []role.Role
+	for _, r := range m.roles {
+		out = append(out, *r)
+	}
+	return out, nil
+}
+
+func (m *mockRoleStore) Delete(ctx context.Context, id uuid.UUID) error {
+	for name, r := range m.roles {
+		if r.ID == id {
+			delete(m.roles, name)
+			return nil
+		}
+	}
+	return role.ErrNotFound
+}
+
+func (m *mockRoleStore) AssignPermission(ctx context.Context, roleID, permissionID uuid.UUID) error {
+	return nil
+}
+
+func (m *mockRoleStore) RemovePermission(ctx context.Context, roleID, permissionID uuid.UUID) error {
+	return nil
 }
 
 func (m *mockRoleStore) AssignRoleToUser(ctx context.Context, userID, roleID uuid.UUID) error {

@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"users/internal/api/middleware"
 	"users/internal/auth"
+	"users/internal/role"
 	"users/internal/user"
 
 	"github.com/google/uuid"
@@ -24,9 +26,9 @@ func (m *mockUserStoreForUsers) List(ctx context.Context) ([]user.User, error) {
 	return m.users, m.err
 }
 
-func (m *mockUserStoreForUsers) GetByID(ctx context.Context, id string) (*user.User, error) {
+func (m *mockUserStoreForUsers) GetByID(ctx context.Context, id uuid.UUID) (*user.User, error) {
 	for _, u := range m.users {
-		if u.ID.String() == id {
+		if u.ID == id {
 			return &u, nil
 		}
 	}
@@ -46,6 +48,20 @@ func (m *mockUserStoreForUsers) Update(ctx context.Context, u *user.User) error 
 		}
 	}
 	return m.err
+}
+
+type mockUserRoleStoreForMe struct {
+	roles       []role.Role
+	permissions []role.Permission
+	err         error
+}
+
+func (m *mockUserRoleStoreForMe) GetRolesByUserID(ctx context.Context, userID uuid.UUID) ([]role.Role, error) {
+	return m.roles, m.err
+}
+
+func (m *mockUserRoleStoreForMe) GetPermissionsByUserID(ctx context.Context, userID uuid.UUID) ([]role.Permission, error) {
+	return m.permissions, m.err
 }
 
 func TestListUsers_AsAdmin_Succeeds(t *testing.T) {
@@ -176,6 +192,80 @@ func TestGetUser_OtherUser_AsNonAdmin_Returns403(t *testing.T) {
 	}
 }
 
+func TestMe_ReturnsCurrentUser(t *testing.T) {
+	userID := uuid.New()
+	testUser := user.User{ID: userID, Username: "meuser"}
+
+	store := &mockUserStoreForUsers{users: []user.User{testUser}}
+	h := NewUserHandler(UserHandlerConfig{UserStore: store})
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/me", nil)
+	claims := &auth.Claims{UserID: userID.String(), Roles: []string{"viewer"}}
+	req = req.WithContext(middleware.ContextWithClaims(req.Context(), claims))
+
+	rec := httptest.NewRecorder()
+	h.Me(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusOK, rec.Code, rec.Body.String())
+	}
+	var resp map[string]any
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if resp["id"] != userID.String() || resp["username"] != "meuser" {
+		t.Errorf("got %v", resp)
+	}
+}
+
+func TestMe_ReturnsForcePasswordChangeRolesPermissions_WhenStoreSet(t *testing.T) {
+	userID := uuid.New()
+	testUser := user.User{
+		ID:                  userID,
+		Username:            "meuser",
+		ForcePasswordChange: true,
+	}
+	roleStore := &mockUserRoleStoreForMe{
+		roles: []role.Role{
+			{ID: uuid.New(), Name: "admin", CreatedAt: time.Now()},
+			{ID: uuid.New(), Name: "viewer", CreatedAt: time.Now()},
+		},
+		permissions: []role.Permission{
+			{ID: uuid.New(), Key: "users:read", CreatedAt: time.Now()},
+			{ID: uuid.New(), Key: "users:write", CreatedAt: time.Now()},
+		},
+	}
+	userStore := &mockUserStoreForUsers{users: []user.User{testUser}}
+	h := NewUserHandler(UserHandlerConfig{
+		UserStore:          userStore,
+		UserRoleStoreForMe: roleStore,
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/me", nil)
+	req = req.WithContext(middleware.ContextWithClaims(req.Context(), &auth.Claims{UserID: userID.String()}))
+	rec := httptest.NewRecorder()
+	h.Me(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusOK, rec.Code, rec.Body.String())
+	}
+	var resp map[string]any
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if resp["force_password_change"] != true {
+		t.Errorf("expected force_password_change true, got %v", resp["force_password_change"])
+	}
+	roles, _ := resp["roles"].([]interface{})
+	if len(roles) != 2 {
+		t.Errorf("expected 2 roles, got %d", len(roles))
+	}
+	perms, _ := resp["permissions"].([]interface{})
+	if len(perms) != 2 {
+		t.Errorf("expected 2 permissions, got %d", len(perms))
+	}
+}
+
 func TestCreateUser_AsAdmin_Succeeds(t *testing.T) {
 	// Arrange
 	store := &mockUserStoreForUsers{}
@@ -246,6 +336,86 @@ func TestUpdateUser_OwnUser_Succeeds(t *testing.T) {
 
 	if resp["username"] != "newname" {
 		t.Errorf("expected username newname, got %s", resp["username"])
+	}
+}
+
+func TestMe_ReturnsAvatarURL(t *testing.T) {
+	userID := uuid.New()
+	testUser := user.User{ID: userID, Username: "meuser", AvatarURL: "https://example.com/avatar.png"}
+
+	store := &mockUserStoreForUsers{users: []user.User{testUser}}
+	h := NewUserHandler(UserHandlerConfig{UserStore: store})
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/me", nil)
+	req = req.WithContext(middleware.ContextWithClaims(req.Context(), &auth.Claims{UserID: userID.String()}))
+	rec := httptest.NewRecorder()
+	h.Me(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusOK, rec.Code, rec.Body.String())
+	}
+	var resp map[string]any
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if resp["avatar_url"] != "https://example.com/avatar.png" {
+		t.Errorf("expected avatar_url in Me response, got %v", resp["avatar_url"])
+	}
+}
+
+func TestGetUser_ReturnsAvatarURL(t *testing.T) {
+	userID := uuid.New()
+	testUser := user.User{ID: userID, Username: "getuser", AvatarURL: "https://cdn.example.com/photo.jpg"}
+
+	store := &mockUserStoreForUsers{users: []user.User{testUser}}
+	h := NewUserHandler(UserHandlerConfig{UserStore: store})
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/users/"+userID.String(), nil)
+	req.SetPathValue("id", userID.String())
+	req = req.WithContext(middleware.ContextWithClaims(req.Context(), &auth.Claims{UserID: userID.String(), Roles: []string{"viewer"}}))
+	rec := httptest.NewRecorder()
+	h.GetUser(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusOK, rec.Code, rec.Body.String())
+	}
+	var resp map[string]any
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if resp["avatar_url"] != "https://cdn.example.com/photo.jpg" {
+		t.Errorf("expected avatar_url in GetUser response, got %v", resp["avatar_url"])
+	}
+}
+
+func TestUpdateUser_SetsAvatarURL(t *testing.T) {
+	userID := uuid.New()
+	existingUser := user.User{ID: userID, Username: "user"}
+
+	store := &mockUserStoreForUsers{users: []user.User{existingUser}}
+	h := NewUserHandler(UserHandlerConfig{UserStore: store})
+
+	body := `{"username":"user","avatar_url":"https://example.com/new-avatar.png"}`
+	req := httptest.NewRequest(http.MethodPut, "/v1/users/"+userID.String(), bytes.NewBufferString(body))
+	req.SetPathValue("id", userID.String())
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(middleware.ContextWithClaims(req.Context(), &auth.Claims{UserID: userID.String(), Roles: []string{"viewer"}}))
+	rec := httptest.NewRecorder()
+
+	h.UpdateUser(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusOK, rec.Code, rec.Body.String())
+	}
+	var resp map[string]any
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if resp["avatar_url"] != "https://example.com/new-avatar.png" {
+		t.Errorf("expected avatar_url in response, got %v", resp["avatar_url"])
+	}
+	if store.users[0].AvatarURL != "https://example.com/new-avatar.png" {
+		t.Errorf("expected store user AvatarURL to be set, got %q", store.users[0].AvatarURL)
 	}
 }
 
