@@ -20,6 +20,7 @@ type User struct {
 	Username            string
 	PasswordHash        string
 	ForcePasswordChange bool
+	AvatarURL           string
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 }
