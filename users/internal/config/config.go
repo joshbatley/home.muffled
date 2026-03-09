@@ -104,21 +104,10 @@ func parseDurationOrDefault(key string, defaultValue time.Duration) (time.Durati
 func (c *Config) Log() {
 	log.Printf("Config loaded:")
 	log.Printf("  PORT=%s", c.Port)
-	log.Printf("  DATABASE_URL=%s", maskSecret(c.DatabaseURL))
-	log.Printf("  JWT_SECRET=%s", maskSecret(c.JWTSecret))
 	log.Printf("  ACCESS_TOKEN_TTL=%s", c.AccessTokenTTL)
 	log.Printf("  REFRESH_TOKEN_TTL=%s", c.RefreshTokenTTL)
-	log.Printf("  SEED_USERNAME=%s", c.SeedUsername)
-	log.Printf("  SEED_PASSWORD=%s", maskSecret(c.SeedPassword))
 	log.Printf("  LOG_LEVEL=%s", c.LogLevel)
 	if len(c.CORSOrigins) > 0 {
 		log.Printf("  CORS_ORIGINS=%v", c.CORSOrigins)
 	}
-}
-
-func maskSecret(s string) string {
-	if len(s) <= 4 {
-		return "****"
-	}
-	return s[:2] + "****" + s[len(s)-2:]
 }
