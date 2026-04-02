@@ -22,6 +22,7 @@ describe("listProjects", () => {
 
     await mkdir(join(root, "alpha"));
     await mkdir(join(root, "beta"));
+    await mkdir(join(root, ".git"));
     await mkdir(join(root, "alpha", "nested"));
     await writeFile(join(root, "README.md"), "not-a-project", "utf8");
 

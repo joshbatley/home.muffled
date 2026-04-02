@@ -1,6 +1,6 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { FeatureShell } from "./feature-shell";
 
 vi.mock("./project-selector", () => ({
@@ -16,7 +16,22 @@ vi.mock("./chat-panel", () => ({
 }));
 
 describe("FeatureShell", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("switches project scope and triggers new/continue actions", () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/api/openclaw/health")) {
+        return new Response(JSON.stringify({ state: "up" }), { status: 200 });
+      }
+      if (url.includes("/api/ollama/models")) {
+        return new Response(JSON.stringify({ models: ["llama3.2:latest"] }), { status: 200 });
+      }
+      return new Response(null, { status: 404 });
+    });
+
     const controller = {
       selectProject: vi.fn(),
       startNewChat: vi.fn(async () => undefined),

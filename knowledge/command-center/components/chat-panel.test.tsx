@@ -6,6 +6,12 @@ import { ChatPanel } from "./chat-panel";
 type ChatMessage = {
   role: "user" | "assistant";
   text: string;
+  sources?: {
+    title?: string;
+    url?: string;
+    path?: string;
+    snippet?: string;
+  }[];
 };
 
 function createControllerMock() {
@@ -64,5 +70,23 @@ describe("ChatPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
 
     expect(mock.controller.send).toHaveBeenCalledWith("Hi there");
+  });
+
+  it("renders assistant sources", async () => {
+    const mock = createControllerMock();
+    render(<ChatPanel project="alpha" controller={mock.controller} />);
+
+    mock.setMessages([
+      {
+        role: "assistant",
+        text: "See docs",
+        sources: [{ title: "DECISIONS", path: "alpha/docs/DECISIONS.md" }]
+      }
+    ]);
+
+    await waitFor(() => {
+      expect(screen.getByText("Sources")).toBeInTheDocument();
+      expect(screen.getByText("DECISIONS")).toBeInTheDocument();
+    });
   });
 });

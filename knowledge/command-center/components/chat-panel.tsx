@@ -5,6 +5,12 @@ import { useEffect, useState } from "react";
 type ChatMessage = {
   role: "user" | "assistant";
   text: string;
+  sources?: {
+    title?: string;
+    url?: string;
+    path?: string;
+    snippet?: string;
+  }[];
 };
 
 type ChatController = {
@@ -38,6 +44,25 @@ export function ChatPanel({ project, controller }: ChatPanelProps) {
             <strong>{message.role === "user" ? "You" : "Assistant"}:</strong> {message.text}
           </p>
         ))}
+        {messages.map((message, index) => {
+          if (message.role !== "assistant" || !message.sources?.length) {
+            return null;
+          }
+
+          return (
+            <details key={`sources-${index}`}>
+              <summary>Sources</summary>
+              <ul>
+                {message.sources.map((source, sourceIndex) => (
+                  <li key={`${index}-${source.path ?? source.url ?? source.title ?? sourceIndex}`}>
+                    {source.title ?? source.path ?? source.url ?? "Source"}
+                    {source.url ? ` (${source.url})` : ""}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          );
+        })}
       </div>
       <label>
         Message

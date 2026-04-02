@@ -76,7 +76,7 @@ describe("OpenClawGatewayClient", () => {
     });
     await resetPromise;
 
-    const sendPromise = client.sendChat({ project: "project-alpha", text: "hello" });
+    const sendPromise = client.sendChat({ project: "project-alpha", text: "hello", mode: "new" });
     await Promise.resolve();
     const sendReq = ws.sent[3];
     ws.receive({
@@ -89,11 +89,17 @@ describe("OpenClawGatewayClient", () => {
 
     const parsedEnsure = JSON.parse(ensureReq) as { method: string };
     const parsedReset = JSON.parse(resetReq) as { method: string };
-    const parsedSend = JSON.parse(sendReq) as { method: string };
+    const parsedSend = JSON.parse(sendReq) as {
+      method: string;
+      params: { sessionKey: string; message: string; idempotencyKey: string };
+    };
 
     expect(parsedEnsure.method).toBe("sessions.create");
     expect(parsedReset.method).toBe("sessions.reset");
     expect(parsedSend.method).toBe("chat.send");
+    expect(parsedSend.params.sessionKey).toBe("project-alpha-session");
+    expect(parsedSend.params.message).toBe("hello");
+    expect(parsedSend.params.idempotencyKey.length).toBeGreaterThan(0);
     expect((JSON.parse(connectReq) as { method: string }).method).toBe("connect");
   });
 

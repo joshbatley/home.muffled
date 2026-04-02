@@ -46,6 +46,34 @@ describe("OpenClaw protocol utils", () => {
     expect(isChatEventFrame(event)).toBe(true);
   });
 
+  it("keeps chat citation sources on event payload", () => {
+    const event = parseGatewayFrame(
+      JSON.stringify({
+        type: "event",
+        event: "chat",
+        payload: {
+          runId: "run-2",
+          sessionKey: "project-a",
+          seq: 1,
+          state: "final",
+          message: { role: "assistant", content: [{ type: "text", text: "Answer" }] },
+          sources: [
+            {
+              title: "Decision doc",
+              path: "alpha/docs/DECISIONS.md",
+              snippet: "Service selected: postgres"
+            }
+          ]
+        }
+      })
+    );
+
+    expect(isChatEventFrame(event)).toBe(true);
+    if (isChatEventFrame(event) && event.payload?.sources) {
+      expect(event.payload.sources[0]?.path).toBe("alpha/docs/DECISIONS.md");
+    }
+  });
+
   it("throws on invalid frame shape", () => {
     expect(() => parseGatewayFrame(JSON.stringify({ bad: true }))).toThrowError();
   });

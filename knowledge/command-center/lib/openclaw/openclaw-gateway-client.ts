@@ -133,7 +133,7 @@ export class OpenClawGatewayClient {
     await this.request("sessions.reset", { key: sessionKey, reason: "new" });
   }
 
-  async sendChat(input: { project: string; text: string }): Promise<void> {
+  async sendChat(input: { project: string; text: string; mode: "new" | "continue" }): Promise<void> {
     const sessionKey = await this.ensureSession(input.project);
     await this.request("chat.send", {
       sessionKey,
