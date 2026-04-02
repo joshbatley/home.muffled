@@ -1,0 +1,14 @@
+.openclaw/
+.pnpm-store/
+node_modules/
+.dist/
+.vite/
+.vitest/
+.coverage/
+.nyc_output/
+.test-results/
+.test-results-*/
+.test-results-*/
+.ds_store
+projects/
+.next/
