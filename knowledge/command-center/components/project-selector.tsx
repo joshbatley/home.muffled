@@ -4,9 +4,15 @@ import { useEffect, useState } from "react";
 
 type ProjectSelectorProps = {
   onProjectChange: (projectName: string) => void;
+  initialProject?: string;
+  projectStorageKey?: string;
 };
 
-export function ProjectSelector({ onProjectChange }: ProjectSelectorProps) {
+export function ProjectSelector({
+  onProjectChange,
+  initialProject,
+  projectStorageKey
+}: ProjectSelectorProps) {
   const [projects, setProjects] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -24,15 +30,28 @@ export function ProjectSelector({ onProjectChange }: ProjectSelectorProps) {
 
       const data = (await response.json()) as { projects: string[] };
       setProjects(data.projects);
-      setSelectedProject(data.projects[0] ?? "");
-      if (data.projects[0]) {
-        onProjectChange(data.projects[0]);
+      const firstProject = data.projects[0] ?? "";
+      const rememberedProject =
+        projectStorageKey &&
+        typeof window !== "undefined" &&
+        typeof window.localStorage?.getItem === "function"
+          ? window.localStorage.getItem(projectStorageKey)
+          : "";
+      const nextProject =
+        (rememberedProject && data.projects.includes(rememberedProject)
+          ? rememberedProject
+          : initialProject && data.projects.includes(initialProject)
+            ? initialProject
+            : firstProject);
+      setSelectedProject(nextProject);
+      if (nextProject) {
+        onProjectChange(nextProject);
       }
       setIsLoading(false);
     }
 
     void loadProjects();
-  }, []);
+  }, [onProjectChange, initialProject, projectStorageKey]);
 
   if (isLoading) {
     return <p>Loading projects...</p>;

@@ -33,9 +33,17 @@ export type ChatEventPayload = {
   seq: number;
   state: "delta" | "final" | "aborted" | "error";
   message?: unknown;
+  sources?: ChatSource[];
   errorMessage?: string;
   usage?: unknown;
   stopReason?: string;
+};
+
+export type ChatSource = {
+  title?: string;
+  url?: string;
+  path?: string;
+  snippet?: string;
 };
 
 function generateId(): string {

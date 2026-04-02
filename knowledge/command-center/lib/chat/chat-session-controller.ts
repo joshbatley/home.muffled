@@ -1,14 +1,16 @@
 import type { ChatEventPayload } from "../openclaw/protocol";
+import type { ChatSource } from "../openclaw/protocol";
 
 type ChatMessage = {
   role: "user" | "assistant";
   text: string;
+  sources?: ChatSource[];
 };
 
 type OpenClawClient = {
   ensureSession: (project: string) => Promise<string>;
   newChat: (project: string) => Promise<void>;
-  sendChat: (input: { project: string; text: string }) => Promise<void>;
+  sendChat: (input: { project: string; text: string; mode: "new" | "continue" }) => Promise<void>;
   onChatEvent: (listener: (event: ChatEventPayload) => void) => () => void;
 };
 
@@ -36,6 +38,21 @@ function extractMessageText(message: unknown): string {
   return textParts.join("");
 }
 
+function normalizeSources(sources: unknown): ChatSource[] {
+  if (!Array.isArray(sources)) {
+    return [];
+  }
+
+  return sources
+    .filter((source): source is ChatSource => !!source && typeof source === "object")
+    .map((source) => ({
+      title: typeof source.title === "string" ? source.title : undefined,
+      url: typeof source.url === "string" ? source.url : undefined,
+      path: typeof source.path === "string" ? source.path : undefined,
+      snippet: typeof source.snippet === "string" ? source.snippet : undefined
+    }));
+}
+
 export class ChatSessionController {
   private readonly client: OpenClawClient;
   private readonly byProject = new Map<string, ProjectState>();
@@ -52,18 +69,22 @@ export class ChatSessionController {
         }
 
         const assistantText = extractMessageText(event.message);
-        if (!assistantText) {
+        const sources = normalizeSources(event.sources);
+        if (!assistantText && sources.length === 0) {
           continue;
         }
 
         const last = state.messages[state.messages.length - 1];
         if (!last || last.role !== "assistant") {
-          state.messages.push({ role: "assistant", text: assistantText });
+          state.messages.push({ role: "assistant", text: assistantText, sources });
           this.emitChange();
           continue;
         }
 
-        last.text = assistantText;
+        if (assistantText) {
+          last.text = assistantText;
+        }
+        last.sources = sources;
         this.emitChange();
       }
     });
@@ -103,7 +124,7 @@ export class ChatSessionController {
     }
     state.messages.push({ role: "user", text });
     this.emitChange();
-    await this.client.sendChat({ project, text });
+    await this.client.sendChat({ project, text, mode: state.mode });
   }
 
   getMessages(project: string): ChatMessage[] {

@@ -37,6 +37,7 @@ describe("ChatSessionController", () => {
 
     await controller.startNewChat();
     expect(controller.getMessages("alpha")).toEqual([]);
+    expect(client.api.newChat).toHaveBeenCalledWith("alpha");
   });
 
   it("continue chat reuses prior messages", async () => {
@@ -52,6 +53,11 @@ describe("ChatSessionController", () => {
       { role: "user", text: "hello" },
       { role: "user", text: "again" }
     ]);
+    expect(client.api.sendChat).toHaveBeenLastCalledWith({
+      project: "alpha",
+      text: "again",
+      mode: "continue"
+    });
   });
 
   it("applies chat delta/final events to assistant message", async () => {
@@ -76,7 +82,69 @@ describe("ChatSessionController", () => {
     });
 
     expect(controller.getMessages("alpha")).toEqual([
-      { role: "assistant", text: "Hello" }
+      { role: "assistant", text: "Hello", sources: [] }
     ]);
+  });
+
+  it("stores assistant sources from chat events", async () => {
+    const client = createClientMock();
+    const controller = new ChatSessionController(client.api);
+    controller.selectProject("alpha");
+    await controller.continueChat();
+
+    client.emit({
+      runId: "run-1",
+      sessionKey: "session-alpha",
+      seq: 1,
+      state: "final",
+      message: { content: [{ type: "text", text: "Use postgres" }] },
+      sources: [{ title: "Decision", path: "alpha/docs/DECISIONS.md" }]
+    });
+
+    expect(controller.getMessages("alpha")).toEqual([
+      {
+        role: "assistant",
+        text: "Use postgres",
+        sources: [{ title: "Decision", path: "alpha/docs/DECISIONS.md", url: undefined, snippet: undefined }]
+      }
+    ]);
+  });
+
+  it("handles missing or partial sources without crashing", async () => {
+    const client = createClientMock();
+    const controller = new ChatSessionController(client.api);
+    controller.selectProject("alpha");
+    await controller.continueChat();
+
+    client.emit({
+      runId: "run-2",
+      sessionKey: "session-alpha",
+      seq: 1,
+      state: "final",
+      message: { content: [{ type: "text", text: "Done" }] },
+      sources: [{ bad: true } as unknown as { title?: string }]
+    });
+
+    expect(controller.getMessages("alpha")).toEqual([
+      {
+        role: "assistant",
+        text: "Done",
+        sources: [{ title: undefined, url: undefined, path: undefined, snippet: undefined }]
+      }
+    ]);
+  });
+
+  it("sends with new mode by default", async () => {
+    const client = createClientMock();
+    const controller = new ChatSessionController(client.api);
+    controller.selectProject("alpha");
+
+    await controller.send("hello");
+
+    expect(client.api.sendChat).toHaveBeenCalledWith({
+      project: "alpha",
+      text: "hello",
+      mode: "new"
+    });
   });
 });

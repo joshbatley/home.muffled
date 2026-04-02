@@ -16,10 +16,12 @@
 
 ## Terminology
 - **Document store root**: the host folder mounted into OpenClaw. It contains project subfolders directly.
+  - Host location (selected): `knowledge/projects`
   - Container location (target): `/home/node/.openclaw/workspace/<projectName>/...`
 - **Project**: one immediate subdirectory inside the document store root, selected from the UI.
 - **Workspace**: the OpenClaw workspace path (inside the container) used by filesystem tools.
 - **Chat transcript**: a short-lived brainstorming thread, stored as markdown on disk.
+- **Implementation/runtime root**: OpenClaw runtime state and config stored at `knowledge/.openclaw` (not part of exported project data).
 
 ## User Experience (main flows)
 ### 1) New chat (brainstorming mode)
@@ -100,21 +102,12 @@ OpenClaw must be able to read markdown files from the mounted document store roo
 Projects appear inside OpenClaw at:
 - `/home/node/.openclaw/workspace/<projectName>/...`
 
-### Current state
-Your current `knowledge/docker-compose.yaml` mounts OpenClaw config + AI memory:
-- `~/.openclaw:/home/node/.openclaw`
-but it does not yet mount your markdown knowledge base folder into:
-- `/home/node/.openclaw/workspace`
+### Current state (implemented)
+`knowledge/docker-compose.yaml` mounts:
+- `knowledge/.openclaw` -> `/home/node/.openclaw` (runtime/config only)
+- `knowledge/projects` -> `/home/node/.openclaw/workspace` (exported project docs only)
 
-### Required compose behavior
-Add a volume mapping that mounts the host document store root into the OpenClaw workspace root.
-
-Conceptually:
-- host: `${OPENCLAW_DOCSTORE_HOST_PATH}` -> container: `/home/node/.openclaw/workspace`
-
-Notes:
-- You want the host path to be configurable via env var passed to `docker-compose`.
-- Default behavior requested: “if nothing is passed, use the current dir”.
+This keeps implementation/runtime files separate from project data.
 
 ## Chat Scoping Rules
 ### New chat default (no transcript recall)
@@ -132,6 +125,7 @@ searches only within the selected project folder.
 ### Required capabilities
 1. Fast project-scoped search across markdown files.
 2. Ability for the agent to retrieve relevant snippets or full sections before answering.
+3. Retrieval corpus must exclude implementation/runtime files by design; only files under `knowledge/projects/<projectName>/...` are in scope.
 
 ### Implementation approach (to be finalized in “Open Questions / TBD”)
 Two viable approaches exist; the spec includes the selection criteria:
@@ -243,6 +237,7 @@ This spec assumes:
 ### Feature 1: Wrapper app shell + project selection + OpenClaw WS chat session
 In scope
 - Next.js app loads and connects to OpenClaw gateway via WebSocket on `18789`
+- Local UI dev server runs on `3077`
 - “Project” dropdown selects a subfolder under the document store root
 - New chat starts a short-lived session using the selected project scope
 - New chats do not recall prior chat transcripts by default
@@ -257,6 +252,8 @@ In scope
 - Use `qmd-local-search` for project-scoped retrieval
 - Retrieval runs inside the OpenClaw agent (OpenClaw owns running the `qmd-local-search` logic)
 - Wrapper passes the user prompt + selected project scope; OpenClaw retrieves within that project
+- Wrapper must use the gateway-supported `chat.send` payload contract (no unsupported custom params)
+- Project scope means markdown under the selected project directory (file naming is unconstrained)
 
 Acceptance criteria
 1. In a new chat, questions like “In project X what service did we decide on?” are answered from `X` docs.
@@ -307,4 +304,13 @@ In scope
 
 Acceptance criteria
 1. When web research is used, sources are visible in the UI.
+
+## Implemented QoL (non-blocking)
+- Project selector remembers the last selected project locally (`localStorage`).
+- Model selector loads available models from local Ollama (`/api/tags`) and can set the selected model.
+- Model preference is remembered locally and can be reapplied on load.
+- Health widget checks OpenClaw `/health` on load and every 30 seconds with status states:
+  - `up` (green)
+  - `starting` (yellow)
+  - `down` (red)
 
