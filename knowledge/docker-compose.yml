@@ -8,5 +8,5 @@ services:
     environment:
       - STORAGE_DIR=/app/server/storage
     volumes:
-      - .:/app/server/storage
+      - ./storage:/app/server/storage
       - ~/vault:/app/server/storage/documents
