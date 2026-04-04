@@ -17,7 +17,7 @@ The system uses **AnythingLLM** as the core orchestration engine. It treats your
 *   **Engine:** AnythingLLM (Dockerized)
 *   **Brain:** Ollama (Local API integration)
 *   **Storage:**
-    *   `~/projects/home.muffled/knowledge`: App configuration and Vector Database.
+    *   `~/projects/home.muffled/knowledge/storage`: AnythingLLM app data and vector database (gitignored; created on first run).
     *   `~/vault`: The primary research directory (Source of Truth).
 *   **Accessibility:** Web-based interface on host port **3928** (container listens on 3001; see [`docker-compose.yml`](docker-compose.yml) in this directory).
 
@@ -34,7 +34,7 @@ The system uses **AnythingLLM** as the core orchestration engine. It treats your
     ```
 
 ### Docker Compose
-The stack is defined in this app directory: [`docker-compose.yml`](docker-compose.yml) (`~/projects/home.muffled/knowledge/docker-compose.yml`). Review or adjust volumes there if your paths differ.
+The stack is defined in this app directory: [`docker-compose.yml`](docker-compose.yml) (`~/projects/home.muffled/knowledge/docker-compose.yml`). AnythingLLM state lives under `storage/` in this directory (ignored by git), not next to `README.md`. If you previously used a compose file that mounted the whole app directory as storage, stop the container, move those generated files into `storage/`, then start again.
 
 ### Launch & Configuration
 1.  **Start the service:**
