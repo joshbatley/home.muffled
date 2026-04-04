@@ -1,10 +1,11 @@
 """
 title: Save to Knowledge
 author: home.muffled
-version: 1.0.0
+version: 1.1.0
 required_open_webui_version: 0.5.0
 """
 
+import asyncio
 import os
 import re
 from datetime import datetime
@@ -28,7 +29,17 @@ class Action:
         __event_emitter__=None,
         __event_call__=None,
         __request__=None,
+        __model__=None,
     ):
+        try:
+            return await self._run(body, __user__, __event_emitter__, __event_call__, __request__, __model__)
+        except Exception:
+            import traceback
+            await __event_emitter__(
+                {"type": "notification", "data": {"type": "error", "content": traceback.format_exc()[-500:]}}
+            )
+
+    async def _run(self, body, __user__, __event_emitter__, __event_call__, __request__, __model__=None):
         messages = body.get("messages", [])
         assistant_messages = [m for m in messages if m.get("role") == "assistant"]
         if not assistant_messages:
@@ -44,24 +55,41 @@ class Action:
         base_url = str(__request__.base_url).rstrip("/")
         auth_headers = {"Authorization": f"Bearer {token}"}
 
-        # Fetch knowledge bases
-        async with httpx.AsyncClient() as client:
-            kb_resp = await client.get(f"{base_url}/api/v1/knowledge/", headers=auth_headers)
+        def safe_json(resp):
+            try:
+                return resp.json()
+            except Exception:
+                return None
 
-        knowledge_bases = kb_resp.json() if kb_resp.status_code == 200 else []
+        # Extract knowledge bases from __model__ (injected by Open WebUI)
+        knowledge_bases = []
+        if __model__:
+            meta = (
+                (__model__.get("info") or {}).get("meta") or
+                __model__.get("meta") or
+                {}
+            )
+            kb_refs = meta.get("knowledge", []) if isinstance(meta, dict) else []
+            for ref in kb_refs:
+                if isinstance(ref, dict) and ref.get("id"):
+                    knowledge_bases.append(ref)
+
         if not knowledge_bases:
             await __event_emitter__(
                 {
                     "type": "notification",
                     "data": {
                         "type": "error",
-                        "content": "No knowledge bases found. Create one in Workspace → Knowledge first.",
+                        "content": "No knowledge base attached to this model. Go to Workspace → Models → your model → add a Knowledge base.",
                     },
                 }
             )
             return
 
-        # Prompt: filename
+        # Only one KB supported per model — use it directly
+        selected_kb = knowledge_bases[0]
+
+        # Prompt: filename only
         slug = re.sub(r"[^\w\s-]", "", content[:50]).strip().replace(" ", "-").lower()
         default_name = f"{datetime.now().strftime('%Y-%m-%d')}-{slug}"
 
@@ -70,58 +98,43 @@ class Action:
                 "type": "input",
                 "data": {
                     "title": "Save to Knowledge",
-                    "message": "Filename (without .md):",
+                    "message": f"Filename (without .md) — saving to '{selected_kb['name']}':",
                     "placeholder": default_name,
                 },
             }
         )
-        filename = (filename_input or default_name).strip().removesuffix(".md") or default_name
+        filename_str = filename_input if isinstance(filename_input, str) else ""
+        filename = filename_str.strip().removesuffix(".md") or default_name
 
-        # Prompt: knowledge base
-        kb_list = "\n".join(f"{i + 1}. {kb['name']}" for i, kb in enumerate(knowledge_bases))
-        kb_input = await __event_call__(
-            {
-                "type": "input",
-                "data": {
-                    "title": "Select Knowledge Base",
-                    "message": f"Enter number:\n{kb_list}",
-                    "placeholder": "1",
-                },
-            }
-        )
-        try:
-            selected_kb = knowledge_bases[int(kb_input or "1") - 1]
-        except (ValueError, IndexError):
-            selected_kb = knowledge_bases[0]
-
-        # Write file to vault
-        os.makedirs(self.valves.docs_path, exist_ok=True)
-        filepath = os.path.join(self.valves.docs_path, f"{filename}.md")
-        with open(filepath, "w", encoding="utf-8") as f:
+        # Write file to vault/{knowledge-name}/filename.md
+        kb_folder = re.sub(r"[^\w\s-]", "", selected_kb["name"]).strip().replace(" ", "-").lower()
+        save_dir = os.path.join(self.valves.docs_path, kb_folder)
+        os.makedirs(save_dir, exist_ok=True)
+        with open(os.path.join(save_dir, f"{filename}.md"), "w", encoding="utf-8") as f:
             f.write(content)
 
         await __event_emitter__(
-            {"type": "status", "data": {"description": f"Saved {filename}.md — uploading to Knowledge…"}}
+            {"type": "status", "data": {"description": f"Saved {filename}.md — indexing into Knowledge…"}}
         )
 
-        # Upload file and add to knowledge base
+        # Upload, process, then add to knowledge base
         async with httpx.AsyncClient() as client:
             upload_resp = await client.post(
                 f"{base_url}/api/v1/files/",
                 headers=auth_headers,
-                files={"file": (f"{filename}.md", content.encode("utf-8"), "text/markdown")},
+                files={"file": (f"{filename}.md", content.encode("utf-8"), "text/plain")},
             )
 
             if upload_resp.status_code != 200:
                 await __event_emitter__(
-                    {
-                        "type": "notification",
-                        "data": {"type": "error", "content": f"File upload failed: {upload_resp.text}"},
-                    }
+                    {"type": "notification", "data": {"type": "warning", "content": f"File saved to vault but upload failed: {upload_resp.text}"}}
                 )
                 return
 
-            file_id = upload_resp.json().get("id")
+            file_id = (safe_json(upload_resp) or {}).get("id")
+
+            await client.post(f"{base_url}/api/v1/files/{file_id}/process", headers=auth_headers)
+            await asyncio.sleep(2)
 
             kb_add_resp = await client.post(
                 f"{base_url}/api/v1/knowledge/{selected_kb['id']}/file/add",
@@ -131,21 +144,9 @@ class Action:
 
         if kb_add_resp.status_code == 200:
             await __event_emitter__(
-                {
-                    "type": "notification",
-                    "data": {
-                        "type": "success",
-                        "content": f"Saved to ~/vault and added to '{selected_kb['name']}'.",
-                    },
-                }
+                {"type": "notification", "data": {"type": "success", "content": f"Saved to ~/vault/{kb_folder}/{filename}.md and indexed into '{selected_kb['name']}'."}}
             )
         else:
             await __event_emitter__(
-                {
-                    "type": "notification",
-                    "data": {
-                        "type": "warning",
-                        "content": f"File saved to ~/vault but Knowledge indexing failed: {kb_add_resp.text}",
-                    },
-                }
+                {"type": "notification", "data": {"type": "warning", "content": f"Saved to vault but Knowledge indexing failed: {kb_add_resp.text}"}}
             )
