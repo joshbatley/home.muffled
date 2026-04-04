@@ -7,19 +7,19 @@ An autonomous, project-specific research environment that uses a local LLM to tu
 ## Why
 *   **Frictionless Research:** Eliminates the gap between "having an idea" and "documenting it."
 *   **Ownership & Portability:** All research is stored as plain Markdown files. You own your data; it is fully readable and editable without the AI tool.
-*   **Context Isolation:** By using "Workspaces," the AI’s memory is scoped to specific projects (e.g., Flight APIs vs. Game Mechanics), preventing context pollution.
+*   **Context Isolation:** By using separate chats or knowledge bases, the AI's context is scoped to specific projects, preventing context pollution.
 *   **Performance:** All heavy processing (LLM inference, file indexing, RAG) runs locally on your Mac server.
 
 ## How
-The system uses **AnythingLLM** as the core orchestration engine. It treats your `~/vault` directory as a "living library." When you chat, the AI retrieves context from existing project files and uses an automated flow to write new research directly into your file system as Markdown.
+The system uses **Open WebUI** as the core interface, backed by **Ollama** running locally on the host. `~/vault` is the authoritative store for any research worth keeping — treat it as the exit strategy: chat is ephemeral, files in the vault are permanent.
 
 ### System Architecture
-*   **Engine:** AnythingLLM (Dockerized)
-*   **Brain:** Ollama (Local API integration)
+*   **Engine:** Open WebUI (Dockerized)
+*   **Brain:** Ollama (local, running on the host at port 11434)
 *   **Storage:**
-    *   `~/projects/home.muffled/knowledge/storage`: AnythingLLM app data and vector database (gitignored; created on first run).
-    *   `~/vault`: The primary research directory (Source of Truth).
-*   **Accessibility:** Web-based interface on host port **3928** (container listens on 3001; see [`docker-compose.yml`](docker-compose.yml) in this directory).
+    *   `~/projects/home.muffled/knowledge/storage`: Open WebUI app data, SQLite DB, and uploads (gitignored; created on first run).
+    *   `~/vault`: The primary research directory (Source of Truth). Also mounted into the container at `/app/backend/data/docs`.
+*   **Accessibility:** Web-based interface on host port **3928** (container listens on 8080; see [`docker-compose.yml`](docker-compose.yml) in this directory).
 
 ---
 
@@ -27,14 +27,14 @@ The system uses **AnythingLLM** as the core orchestration engine. It treats your
 
 ### Prerequisites
 1. **Docker** (Docker Desktop or Docker Engine) with Compose v2.
-2. **Ollama** installed on the host and listening on **11434** before you configure AnythingLLM.
-3. **Research vault directory:** create it once so the bind mount target is explicit (Docker may also create missing host paths on first run):
+2. **Ollama** installed on the host and listening on **11434** with at least one model pulled (e.g. `ollama pull llama3.2`).
+3. **Research vault directory:**
     ```bash
     mkdir -p ~/vault
     ```
 
 ### Docker Compose
-The stack is defined in this app directory: [`docker-compose.yml`](docker-compose.yml) (`~/projects/home.muffled/knowledge/docker-compose.yml`). AnythingLLM state lives under `storage/` in this directory (ignored by git), not next to `README.md`. If you previously used a compose file that mounted the whole app directory as storage, stop the container, move those generated files into `storage/`, then start again.
+The stack is defined in this directory: [`docker-compose.yml`](docker-compose.yml). Open WebUI state lives under `storage/` (gitignored).
 
 ### Launch & Configuration
 1.  **Start the service:**
@@ -42,8 +42,11 @@ The stack is defined in this app directory: [`docker-compose.yml`](docker-compos
     cd ~/projects/home.muffled/knowledge
     docker compose up -d
     ```
-2.  **Web access:** Open **`http://localhost:3928`** on the machine running Docker, or **`http://<YOUR_LAN_IP>:3928`** from another device on your network. (Port **3001** is only used inside the container.)
-3.  **Engine sync:**
-    *   **LLM provider:** Set the Ollama base URL to `http://host.docker.internal:11434` (Docker Desktop on macOS/Windows). On **Linux**, use your host’s gateway IP toward Docker (often `172.17.0.1`) or another address that reaches Ollama on the host, unless your Docker version supports `host.docker.internal`.
-    *   **Workspace management:** Create separate workspaces for each project. AnythingLLM maps these to sub-folders under `~/vault`.
-    *   **Agent flow:** Use the chat to brainstorm. At the end of a session, request a formal Markdown summary; output can be written under `~/vault` for permanent recall.
+2.  **Web access:** Open **`http://localhost:3928`** locally, or **`http://<YOUR_LAN_IP>:3928`** from another device. (Port **8080** is used inside the container only.)
+3.  **First-time wizard:**
+    *   Create an admin account when prompted.
+    *   Open **Settings → Connections** and confirm the Ollama URL is set to `http://host.docker.internal:11434` (pre-configured via the environment variable; verify it shows your models).
+    *   On **Linux** without Docker Desktop, if `host.docker.internal` doesn't resolve, use the Docker host gateway IP (often `172.17.0.1`).
+4.  **Using the vault:**
+    *   Files under `~/vault` are accessible inside the container at `/app/backend/data/docs`. You can upload/embed them via Open WebUI's **Knowledge** or **Documents** features.
+    *   Treat `~/vault` as the source of truth: save any research worth keeping there (copy from chat, export, or agent-save), so it's editable and movable independently of the app.
