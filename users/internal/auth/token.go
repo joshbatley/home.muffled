@@ -7,30 +7,32 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Claims represents the custom claims in an access token.
 type Claims struct {
 	UserID              string   `json:"user_id"`
+	Email               string   `json:"email"`
 	Roles               []string `json:"roles"`
+	Permissions         []string `json:"permissions"`
 	ForcePasswordChange bool     `json:"force_password_change"`
 	jwt.RegisteredClaims
 }
 
-// TokenPair holds an access token and refresh token.
 type TokenPair struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
 
-// IssueAccessToken creates a signed JWT access token.
-func IssueAccessToken(secret []byte, userID string, roles []string, forcePasswordChange bool, ttl time.Duration) (string, error) {
+func IssueAccessToken(secret []byte, userID, email string, roles, permissions []string, forcePasswordChange bool, ttl time.Duration) (string, error) {
 	now := time.Now()
 	claims := Claims{
 		UserID:              userID,
+		Email:               email,
 		Roles:               roles,
+		Permissions:         permissions,
 		ForcePasswordChange: forcePasswordChange,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
 			IssuedAt:  jwt.NewNumericDate(now),
+			Subject:   userID,
 		},
 	}
 
@@ -38,7 +40,6 @@ func IssueAccessToken(secret []byte, userID string, roles []string, forcePasswor
 	return token.SignedString(secret)
 }
 
-// ValidateAccessToken parses and validates a JWT access token.
 func ValidateAccessToken(secret []byte, tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

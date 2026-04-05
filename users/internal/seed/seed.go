@@ -1,4 +1,3 @@
-// Package seed handles seeding initial data on application startup.
 package seed
 
 import (
@@ -8,83 +7,116 @@ import (
 
 	"github.com/google/uuid"
 
-	"users/internal/auth"
-	"users/internal/role"
-	"users/internal/user"
+	"users2/internal/auth"
+	"users2/internal/role"
+	"users2/internal/user"
 )
 
-// SeedAdmin creates the initial admin user if it doesn't already exist.
-func SeedAdmin(ctx context.Context, userStore user.Store, username, password string) error {
-	_, err := userStore.GetByUsername(ctx, username)
-	if err == nil {
-		return nil
-	}
-	if !errors.Is(err, user.ErrNotFound) {
-		return fmt.Errorf("checking for existing user: %w", err)
+const (
+	PermIntranetRead  = "intranet:read"
+	PermIntranetWrite = "intranet:write"
+	PermUsersAdmin    = "users:admin"
+	RoleAdmin         = "admin"
+	RoleUser          = "user"
+	RoleReadonly      = "readonly"
+)
+
+func SeedDefaults(ctx context.Context, permStore role.PermissionStore, roleStore role.Store) error {
+	keys := []struct {
+		key, desc string
+	}{
+		{PermIntranetRead, "Read intranet resources"},
+		{PermIntranetWrite, "Write intranet resources"},
+		{PermUsersAdmin, "Manage users, roles, and permissions"},
 	}
 
-	hash, err := auth.HashPassword(password)
-	if err != nil {
-		return fmt.Errorf("hashing password: %w", err)
+	permIDs := make(map[string]uuid.UUID)
+	for _, k := range keys {
+		p, err := permStore.GetByKey(ctx, k.key)
+		if err == nil && p != nil {
+			permIDs[k.key] = p.ID
+			continue
+		}
+		if err != nil && !errors.Is(err, role.ErrPermissionNotFound) {
+			return fmt.Errorf("permission %s: %w", k.key, err)
+		}
+		created, err := permStore.Create(ctx, k.key, k.desc)
+		if err != nil {
+			if errors.Is(err, role.ErrDuplicatePermission) {
+				p2, e2 := permStore.GetByKey(ctx, k.key)
+				if e2 != nil {
+					return e2
+				}
+				permIDs[k.key] = p2.ID
+				continue
+			}
+			return fmt.Errorf("create permission %s: %w", k.key, err)
+		}
+		permIDs[k.key] = created.ID
 	}
 
-	u := &user.User{
-		ID:                  uuid.New(),
-		Username:            username,
-		PasswordHash:        hash,
-		ForcePasswordChange: false,
+	roles := []struct {
+		name string
+		keys []string
+	}{
+		{RoleAdmin, []string{PermIntranetRead, PermIntranetWrite, PermUsersAdmin}},
+		{RoleUser, []string{PermIntranetRead, PermIntranetWrite}},
+		{RoleReadonly, []string{PermIntranetRead}},
 	}
 
-	if err := userStore.Create(ctx, u); err != nil {
-		return fmt.Errorf("creating seed user: %w", err)
+	for _, rs := range roles {
+		r, err := roleStore.GetRoleByName(ctx, rs.name)
+		if err != nil && !errors.Is(err, role.ErrNotFound) {
+			return err
+		}
+		if errors.Is(err, role.ErrNotFound) {
+			r, err = roleStore.CreateRole(ctx, rs.name)
+			if err != nil {
+				return fmt.Errorf("create role %s: %w", rs.name, err)
+			}
+		}
+		for _, pk := range rs.keys {
+			pid := permIDs[pk]
+			if err := roleStore.AssignPermission(ctx, r.ID, pid); err != nil {
+				return fmt.Errorf("assign %s to %s: %w", pk, rs.name, err)
+			}
+		}
 	}
 
 	return nil
 }
 
-// SeedAdminWithRole creates the initial admin user and assigns the admin role.
-func SeedAdminWithRole(ctx context.Context, userStore user.Store, roleStore role.Store, username, password string) error {
-	// Check if user already exists
-	existingUser, err := userStore.GetByUsername(ctx, username)
+func SeedAdmin(ctx context.Context, userStore user.Store, roleStore role.Store, email, password string) error {
+	existing, err := userStore.GetByEmail(ctx, email)
 	if err != nil && !errors.Is(err, user.ErrNotFound) {
-		return fmt.Errorf("checking for existing user: %w", err)
+		return fmt.Errorf("checking seed user: %w", err)
 	}
 
 	var u *user.User
-	if existingUser != nil {
-		u = existingUser
+	if existing != nil {
+		u = existing
 	} else {
 		hash, err := auth.HashPassword(password)
 		if err != nil {
-			return fmt.Errorf("hashing password: %w", err)
+			return fmt.Errorf("hash password: %w", err)
 		}
-
 		u = &user.User{
 			ID:                  uuid.New(),
-			Username:            username,
+			Email:               email,
 			PasswordHash:        hash,
 			ForcePasswordChange: false,
 		}
-
 		if err := userStore.Create(ctx, u); err != nil {
-			return fmt.Errorf("creating seed user: %w", err)
+			return fmt.Errorf("create seed user: %w", err)
 		}
 	}
 
-	// Create or get admin role
-	r, err := roleStore.GetRoleByName(ctx, "admin")
-	if errors.Is(err, role.ErrNotFound) {
-		r, err = roleStore.CreateRole(ctx, "admin")
-		if err != nil {
-			return fmt.Errorf("creating admin role: %w", err)
-		}
-	} else if err != nil {
-		return fmt.Errorf("getting admin role: %w", err)
+	adminRole, err := roleStore.GetRoleByName(ctx, RoleAdmin)
+	if err != nil {
+		return fmt.Errorf("admin role: %w", err)
 	}
-
-	// Assign role to user
-	if err := roleStore.AssignRoleToUser(ctx, u.ID, r.ID); err != nil {
-		return fmt.Errorf("assigning admin role: %w", err)
+	if err := roleStore.AssignRoleToUser(ctx, u.ID, adminRole.ID); err != nil {
+		return fmt.Errorf("assign admin role: %w", err)
 	}
 
 	return nil

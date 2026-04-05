@@ -3,127 +3,145 @@ package user
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
-// Store defines the interface for user persistence.
 type Store interface {
-	Create(ctx context.Context, user *User) error
+	Create(ctx context.Context, u *User) error
 	GetByID(ctx context.Context, id uuid.UUID) (*User, error)
-	GetByUsername(ctx context.Context, username string) (*User, error)
+	GetByEmail(ctx context.Context, email string) (*User, error)
 	List(ctx context.Context) ([]User, error)
-	Update(ctx context.Context, user *User) error
+	Update(ctx context.Context, u *User) error
 }
 
-// PostgresStore implements Store using PostgreSQL.
 type PostgresStore struct {
 	db *sql.DB
 }
 
-// NewPostgresStore creates a new PostgresStore.
 func NewPostgresStore(db *sql.DB) *PostgresStore {
 	return &PostgresStore{db: db}
 }
 
-// Create inserts a new user.
-func (s *PostgresStore) Create(ctx context.Context, user *User) error {
-	avatarURL := nullString(user.AvatarURL)
+func (s *PostgresStore) Create(ctx context.Context, u *User) error {
+	prefs := u.Preferences
+	if len(prefs) == 0 {
+		prefs = json.RawMessage(`{}`)
+	}
 	_, err := s.db.ExecContext(ctx,
-		"INSERT INTO users (id, username, password_hash, force_password_change, avatar_url) VALUES ($1, $2, $3, $4, $5)",
-		user.ID, user.Username, user.PasswordHash, user.ForcePasswordChange, avatarURL)
+		`INSERT INTO users (id, email, password_hash, force_password_change, display_name, avatar_url, preferences)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		u.ID, u.Email, u.PasswordHash, u.ForcePasswordChange, nullStr(u.DisplayName), nullStr(u.AvatarURL), prefs)
 	if err != nil {
-		if strings.Contains(err.Error(), "duplicate key") {
-			return fmt.Errorf("%w: %s", ErrDuplicateUsername, user.Username)
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			return fmt.Errorf("%w: %s", ErrDuplicateEmail, u.Email)
 		}
 		return fmt.Errorf("creating user: %w", err)
 	}
 	return nil
 }
 
-func nullString(s string) sql.NullString {
+func nullStr(s string) sql.NullString {
 	if s == "" {
 		return sql.NullString{}
 	}
 	return sql.NullString{String: s, Valid: true}
 }
 
-// GetByID retrieves a user by ID.
 func (s *PostgresStore) GetByID(ctx context.Context, id uuid.UUID) (*User, error) {
 	var u User
-	var avatarURL sql.NullString
+	var displayName, avatarURL sql.NullString
+	var prefs []byte
 	err := s.db.QueryRowContext(ctx,
-		"SELECT id, username, password_hash, force_password_change, avatar_url, created_at, updated_at FROM users WHERE id = $1",
-		id).Scan(&u.ID, &u.Username, &u.PasswordHash, &u.ForcePasswordChange, &avatarURL, &u.CreatedAt, &u.UpdatedAt)
+		`SELECT id, email, password_hash, force_password_change, display_name, avatar_url, preferences, created_at, updated_at
+		 FROM users WHERE id = $1`,
+		id,
+	).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.ForcePasswordChange, &displayName, &avatarURL, &prefs, &u.CreatedAt, &u.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
 	if err != nil {
-		return nil, fmt.Errorf("getting user by id: %w", err)
+		return nil, fmt.Errorf("getting user: %w", err)
 	}
+	u.DisplayName = displayName.String
 	u.AvatarURL = avatarURL.String
+	u.Preferences = prefs
 	return &u, nil
 }
 
-// GetByUsername retrieves a user by username.
-func (s *PostgresStore) GetByUsername(ctx context.Context, username string) (*User, error) {
+func (s *PostgresStore) GetByEmail(ctx context.Context, email string) (*User, error) {
 	var u User
-	var avatarURL sql.NullString
+	var displayName, avatarURL sql.NullString
+	var prefs []byte
 	err := s.db.QueryRowContext(ctx,
-		"SELECT id, username, password_hash, force_password_change, avatar_url, created_at, updated_at FROM users WHERE username = $1",
-		username).Scan(&u.ID, &u.Username, &u.PasswordHash, &u.ForcePasswordChange, &avatarURL, &u.CreatedAt, &u.UpdatedAt)
+		`SELECT id, email, password_hash, force_password_change, display_name, avatar_url, preferences, created_at, updated_at
+		 FROM users WHERE lower(email) = lower($1)`,
+		email,
+	).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.ForcePasswordChange, &displayName, &avatarURL, &prefs, &u.CreatedAt, &u.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
 	if err != nil {
-		return nil, fmt.Errorf("getting user by username: %w", err)
+		return nil, fmt.Errorf("getting user by email: %w", err)
 	}
+	u.DisplayName = displayName.String
 	u.AvatarURL = avatarURL.String
+	u.Preferences = prefs
 	return &u, nil
 }
 
-// List returns all users.
 func (s *PostgresStore) List(ctx context.Context) ([]User, error) {
 	rows, err := s.db.QueryContext(ctx,
-		"SELECT id, username, password_hash, force_password_change, avatar_url, created_at, updated_at FROM users")
+		`SELECT id, email, password_hash, force_password_change, display_name, avatar_url, preferences, created_at, updated_at
+		 FROM users ORDER BY email`)
 	if err != nil {
 		return nil, fmt.Errorf("listing users: %w", err)
 	}
 	defer rows.Close()
 
-	var users []User
+	var out []User
 	for rows.Next() {
 		var u User
-		var avatarURL sql.NullString
-		if err := rows.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.ForcePasswordChange, &avatarURL, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		var displayName, avatarURL sql.NullString
+		var prefs []byte
+		if err := rows.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.ForcePasswordChange, &displayName, &avatarURL, &prefs, &u.CreatedAt, &u.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("scanning user: %w", err)
 		}
+		u.DisplayName = displayName.String
 		u.AvatarURL = avatarURL.String
-		users = append(users, u)
+		u.Preferences = prefs
+		out = append(out, u)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterating users: %w", err)
+		return nil, err
 	}
-	return users, nil
+	return out, nil
 }
 
-// Update updates an existing user.
-func (s *PostgresStore) Update(ctx context.Context, user *User) error {
-	avatarURL := nullString(user.AvatarURL)
-	result, err := s.db.ExecContext(ctx,
-		"UPDATE users SET username = $1, password_hash = $2, force_password_change = $3, avatar_url = $4, updated_at = $5 WHERE id = $6",
-		user.Username, user.PasswordHash, user.ForcePasswordChange, avatarURL, time.Now(), user.ID)
+func (s *PostgresStore) Update(ctx context.Context, u *User) error {
+	prefs := u.Preferences
+	if len(prefs) == 0 {
+		prefs = json.RawMessage(`{}`)
+	}
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE users SET email = $1, password_hash = $2, force_password_change = $3, display_name = $4, avatar_url = $5, preferences = $6, updated_at = $7
+		 WHERE id = $8`,
+		u.Email, u.PasswordHash, u.ForcePasswordChange, nullStr(u.DisplayName), nullStr(u.AvatarURL), prefs, time.Now(), u.ID)
 	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			return fmt.Errorf("%w: %s", ErrDuplicateEmail, u.Email)
+		}
 		return fmt.Errorf("updating user: %w", err)
 	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("getting rows affected: %w", err)
-	}
-	if rowsAffected == 0 {
+	n, _ := res.RowsAffected()
+	if n == 0 {
 		return ErrNotFound
 	}
 	return nil

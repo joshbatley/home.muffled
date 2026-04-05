@@ -1,26 +1,26 @@
-// Package user provides user domain types and storage.
 package user
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-// Sentinel errors for user operations.
 var (
-	ErrNotFound          = errors.New("user not found")
-	ErrDuplicateUsername = errors.New("username already exists")
+	ErrNotFound      = errors.New("user not found")
+	ErrDuplicateEmail = errors.New("email already exists")
 )
 
-// User represents a user in the system.
 type User struct {
 	ID                  uuid.UUID
-	Username            string
+	Email               string
 	PasswordHash        string
 	ForcePasswordChange bool
+	DisplayName         string
 	AvatarURL           string
+	Preferences         json.RawMessage
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 }

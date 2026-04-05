@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// RefreshToken represents a stored refresh token.
 type RefreshToken struct {
 	ID        string
 	UserID    string
@@ -16,7 +15,6 @@ type RefreshToken struct {
 	CreatedAt time.Time
 }
 
-// RefreshTokenStore defines the interface for refresh token persistence.
 type RefreshTokenStore interface {
 	Create(ctx context.Context, userID, tokenHash string, expiresAt time.Time) (*RefreshToken, error)
 	GetByHash(ctx context.Context, tokenHash string) (*RefreshToken, error)
@@ -27,7 +25,6 @@ type refreshTokenStore struct {
 	db *sql.DB
 }
 
-// NewRefreshTokenStore creates a new RefreshTokenStore backed by Postgres.
 func NewRefreshTokenStore(db *sql.DB) RefreshTokenStore {
 	return &refreshTokenStore{db: db}
 }
