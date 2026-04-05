@@ -1,19 +1,27 @@
-.PHONY: help build run test migrate-up migrate-down
+.PHONY: all build test vet tidy run postgres-up postgres-down seed-admin
 
-help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
+all: test build
 
-build: ## Build the auth service binary
-	go build -o bin/authservice ./cmd/authservice
+build:
+	go build -o bin/server ./cmd/server
 
-run: ## Run the auth service
-	go run ./cmd/authservice
-
-test: ## Run all tests
+test:
 	go test ./...
 
-migrate-up: ## Apply all pending database migrations
-	go run ./cmd/migrate up
+vet:
+	go vet ./...
 
-migrate-down: ## Roll back the last database migration
-	go run ./cmd/migrate down
+tidy:
+	go mod tidy
+
+run:
+	go run ./cmd/server
+
+postgres-up:
+	docker compose up -d postgres
+
+postgres-down:
+	docker compose down
+
+seed-admin:
+	go run ./cmd/server -seed-admin
