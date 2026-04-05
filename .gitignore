@@ -1,6 +1,9 @@
 .DS_Store
 .cursor/
 users/bin/
+users/frontend/node_modules/
+users/frontend/dist/
+users/frontend/tsconfig.tsbuildinfo
 # Ignore contents of Prometheus and Grafana data dirs, but keep the dirs themselves
 monitoring/prometheus/data/*
 !monitoring/prometheus/data/.gitkeep
