@@ -1,0 +1,440 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-users2-api",
+    "name": "users2 — home.muffled intranet auth",
+    "description": "Import into Yaak via Settings → Import (Postman v2.1). Set collection variables: baseUrl, then login and paste access_token into accessToken for protected requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "userId", "value": "00000000-0000-0000-0000-000000000000" },
+    { "key": "roleId", "value": "00000000-0000-0000-0000-000000000000" },
+    { "key": "permId", "value": "00000000-0000-0000-0000-000000000000" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /v1/health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/v1/health"
+          }
+        },
+        {
+          "name": "GET /v1/health/ready",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/v1/health/ready"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth (public)",
+      "item": [
+        {
+          "name": "POST /v1/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"your-password\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/login"
+          }
+        },
+        {
+          "name": "POST /v1/auth/refresh",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/refresh"
+          }
+        },
+        {
+          "name": "POST /v1/auth/logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/logout"
+          }
+        },
+        {
+          "name": "POST /v1/auth/forgot-password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/forgot-password"
+          }
+        },
+        {
+          "name": "POST /v1/auth/reset-password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"paste-token-from-email\",\n  \"new_password\": \"new-secure-password\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/reset-password"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth (Bearer)",
+      "item": [
+        {
+          "name": "GET /v1/auth/validate",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/auth/validate"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Me & profile",
+      "item": [
+        {
+          "name": "GET /v1/me",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/me"
+          }
+        },
+        {
+          "name": "PUT /v1/users/{id} (update profile)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"display_name\": \"Display Name\",\n  \"avatar_url\": \"https://example.com/a.png\",\n  \"preferences\": {\"sidebarOpen\": true}\n}"
+            },
+            "url": "{{baseUrl}}/v1/users/{{userId}}"
+          }
+        },
+        {
+          "name": "PUT /v1/users/{id}/password (change password)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"old_password\": \"current-password\",\n  \"new_password\": \"new-password-min-8-chars\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/users/{{userId}}/password"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (admin)",
+      "item": [
+        {
+          "name": "GET /v1/users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/users"
+          }
+        },
+        {
+          "name": "POST /v1/users",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"temporary-password\",\n  \"role_ids\": []\n}"
+            },
+            "url": "{{baseUrl}}/v1/users"
+          }
+        },
+        {
+          "name": "GET /v1/users/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/users/{{userId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roles & permissions (admin)",
+      "item": [
+        {
+          "name": "GET /v1/roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/roles"
+          }
+        },
+        {
+          "name": "POST /v1/roles",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"custom-role\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/roles"
+          }
+        },
+        {
+          "name": "DELETE /v1/roles/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/roles/{{roleId}}"
+          }
+        },
+        {
+          "name": "POST /v1/roles/{id}/permissions",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permission_ids\": [\"{{permId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/v1/roles/{{roleId}}/permissions"
+          }
+        },
+        {
+          "name": "DELETE /v1/roles/{id}/permissions/{permId}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/roles/{{roleId}}/permissions/{{permId}}"
+          }
+        },
+        {
+          "name": "GET /v1/permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/permissions"
+          }
+        },
+        {
+          "name": "POST /v1/permissions",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"service:verb\",\n  \"description\": \"Optional description\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/permissions"
+          }
+        },
+        {
+          "name": "DELETE /v1/permissions/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/permissions/{{permId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "User ↔ role / permission (admin)",
+      "item": [
+        {
+          "name": "POST /v1/users/{id}/roles",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role_ids\": [\"{{roleId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/v1/users/{{userId}}/roles"
+          }
+        },
+        {
+          "name": "DELETE /v1/users/{id}/roles/{roleId}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/users/{{userId}}/roles/{{roleId}}"
+          }
+        },
+        {
+          "name": "POST /v1/users/{id}/permissions (extra grants)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permission_ids\": [\"{{permId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/v1/users/{{userId}}/permissions"
+          }
+        },
+        {
+          "name": "DELETE /v1/users/{id}/permissions/{permId}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/users/{{userId}}/permissions/{{permId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authz",
+      "item": [
+        {
+          "name": "POST /v1/authz/check",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permission\": \"intranet:read\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/authz/check"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Flows (ordered)",
+      "description": "Suggested order: 1) Health → 2) Login → copy access_token & refresh_token into variables → 3) Validate / Me → 4) Admin calls as needed. New user: Login → PUT password (same userId) → login again. Forgot password: Forgot → use token from mail → Reset → Login.",
+      "item": [
+        {
+          "name": "01 — Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/v1/health"
+          }
+        },
+        {
+          "name": "02 — Login (then set accessToken + refreshToken)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"your-password\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/login"
+          }
+        },
+        {
+          "name": "03 — Validate token",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/auth/validate"
+          }
+        },
+        {
+          "name": "04 — Me (roles + permissions)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/me"
+          }
+        },
+        {
+          "name": "05 — First-time password change (force_password_change)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"old_password\": \"temporary-from-admin\",\n  \"new_password\": \"your-new-password\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/users/{{userId}}/password"
+          }
+        }
+      ]
+    }
+  ]
+}

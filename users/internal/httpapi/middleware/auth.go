@@ -3,27 +3,27 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"slices"
 	"strings"
 
-	"users/internal/auth"
+	"users2/internal/auth"
 )
+
+const PermUsersAdmin = "users:admin"
 
 type contextKey string
 
 const claimsKey contextKey = "claims"
 
-// ClaimsFromContext retrieves the auth claims from the request context.
 func ClaimsFromContext(ctx context.Context) *auth.Claims {
 	claims, _ := ctx.Value(claimsKey).(*auth.Claims)
 	return claims
 }
 
-// ContextWithClaims returns a new context with the given claims (for testing).
 func ContextWithClaims(ctx context.Context, claims *auth.Claims) context.Context {
 	return context.WithValue(ctx, claimsKey, claims)
 }
 
-// Auth returns middleware that validates JWT tokens and adds claims to context.
 func Auth(secret []byte) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +51,6 @@ func Auth(secret []byte) func(http.Handler) http.Handler {
 	}
 }
 
-// Admin returns middleware that checks if the user has the admin role.
 func Admin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		claims := ClaimsFromContext(r.Context())
@@ -60,18 +59,19 @@ func Admin(next http.Handler) http.Handler {
 			return
 		}
 
-		for _, role := range claims.Roles {
-			if role == "admin" {
-				next.ServeHTTP(w, r)
-				return
-			}
+		if slices.Contains(claims.Roles, "admin") {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if slices.Contains(claims.Permissions, PermUsersAdmin) {
+			next.ServeHTTP(w, r)
+			return
 		}
 
 		http.Error(w, "forbidden", http.StatusForbidden)
 	})
 }
 
-// ForcePasswordChange returns middleware that blocks all routes except password change when flag is true.
 func ForcePasswordChange(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		claims := ClaimsFromContext(r.Context())
@@ -80,16 +80,16 @@ func ForcePasswordChange(next http.Handler) http.Handler {
 			return
 		}
 
-		if claims.ForcePasswordChange {
-			// Allow password change route
-			if r.Method == http.MethodPut && strings.HasSuffix(r.URL.Path, "/password") {
-				next.ServeHTTP(w, r)
-				return
-			}
-			http.Error(w, "password change required", http.StatusForbidden)
+		if !claims.ForcePasswordChange {
+			next.ServeHTTP(w, r)
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		if r.Method == http.MethodPut && strings.HasSuffix(r.URL.Path, "/password") && r.PathValue("id") == claims.UserID {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		http.Error(w, "password change required", http.StatusForbidden)
 	})
 }
