@@ -1,4 +1,6 @@
 .DS_Store
+.cursor/
+users/bin/
 # Ignore contents of Prometheus and Grafana data dirs, but keep the dirs themselves
 monitoring/prometheus/data/*
 !monitoring/prometheus/data/.gitkeep
