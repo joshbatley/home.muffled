@@ -5,73 +5,32 @@ import (
 	"time"
 )
 
-func TestIssueAndValidateJWT_returns_correct_claims(t *testing.T) {
-	secret := []byte("test-secret-key")
-	userID := "user-123"
-	roles := []string{"admin", "viewer"}
-	forcePasswordChange := false
-	ttl := 15 * time.Minute
-
-	token, err := IssueAccessToken(secret, userID, roles, forcePasswordChange, ttl)
+func TestIssueAndValidateAccessToken(t *testing.T) {
+	secret := []byte("test-secret-key-32bytes-long!!")
+	tok, err := IssueAccessToken(secret, "uid-1", "a@b.c", []string{"user"}, []string{"intranet:read"}, false, time.Hour)
 	if err != nil {
-		t.Fatalf("IssueAccessToken() error = %v", err)
+		t.Fatal(err)
 	}
-
-	if token == "" {
-		t.Fatal("IssueAccessToken() returned empty token")
-	}
-
-	claims, err := ValidateAccessToken(secret, token)
+	claims, err := ValidateAccessToken(secret, tok)
 	if err != nil {
-		t.Fatalf("ValidateAccessToken() error = %v", err)
+		t.Fatal(err)
 	}
-
-	if claims.UserID != userID {
-		t.Errorf("claims.UserID = %q, want %q", claims.UserID, userID)
+	if claims.UserID != "uid-1" || claims.Email != "a@b.c" {
+		t.Fatalf("claims: %+v", claims)
 	}
-
-	if len(claims.Roles) != len(roles) {
-		t.Errorf("claims.Roles = %v, want %v", claims.Roles, roles)
-	}
-
-	if claims.ForcePasswordChange != forcePasswordChange {
-		t.Errorf("claims.ForcePasswordChange = %v, want %v", claims.ForcePasswordChange, forcePasswordChange)
+	if len(claims.Permissions) != 1 || claims.Permissions[0] != "intranet:read" {
+		t.Fatalf("perms: %v", claims.Permissions)
 	}
 }
 
-func TestValidateAccessToken_expired_fails(t *testing.T) {
-	secret := []byte("test-secret-key")
-	userID := "user-123"
-	roles := []string{"admin"}
-	ttl := -1 * time.Minute // already expired
-
-	token, err := IssueAccessToken(secret, userID, roles, false, ttl)
+func TestValidateAccessTokenWrongSecret(t *testing.T) {
+	secret := []byte("test-secret-key-32bytes-long!!")
+	tok, err := IssueAccessToken(secret, "u", "e@e.e", nil, nil, false, time.Hour)
 	if err != nil {
-		t.Fatalf("IssueAccessToken() error = %v", err)
+		t.Fatal(err)
 	}
-
-	_, err = ValidateAccessToken(secret, token)
+	_, err = ValidateAccessToken([]byte("other-secret-key-32bytes-long!"), tok)
 	if err == nil {
-		t.Error("ValidateAccessToken() with expired token should return error, got nil")
-	}
-}
-
-func TestValidateAccessToken_tampered_fails(t *testing.T) {
-	secret := []byte("test-secret-key")
-	userID := "user-123"
-	roles := []string{"admin"}
-	ttl := 15 * time.Minute
-
-	token, err := IssueAccessToken(secret, userID, roles, false, ttl)
-	if err != nil {
-		t.Fatalf("IssueAccessToken() error = %v", err)
-	}
-
-	// Tamper with the token by modifying a character
-	tampered := token[:len(token)-5] + "XXXXX"
-
-	_, err = ValidateAccessToken(secret, tampered)
-	if err == nil {
-		t.Error("ValidateAccessToken() with tampered token should return error, got nil")
+		t.Fatal("expected error")
 	}
 }

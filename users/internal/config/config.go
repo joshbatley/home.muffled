@@ -1,4 +1,3 @@
-// Package config handles loading and validation of application configuration.
 package config
 
 import (
@@ -10,20 +9,26 @@ import (
 	"time"
 )
 
-// Config holds all application configuration.
 type Config struct {
 	Port            string
 	DatabaseURL     string
 	JWTSecret       string
-	AccessTokenTTL  time.Duration
-	RefreshTokenTTL time.Duration
-	SeedUsername    string
+	AccessTokenTTL    time.Duration
+	RefreshTokenTTL   time.Duration
+	PasswordResetTTL  time.Duration
+	SeedEmail       string
 	SeedPassword    string
 	LogLevel        string
-	CORSOrigins     []string // allowed origins for CORS (empty = no CORS)
+	CORSOrigins     []string
+	PublicBaseURL   string
+
+	SMTPHost     string
+	SMTPPort     string
+	SMTPUser     string
+	SMTPPassword string
+	MailFrom     string
 }
 
-// Load reads configuration from environment variables and validates required values.
 func Load() (*Config, error) {
 	accessTTL, err := parseDurationOrDefault("ACCESS_TOKEN_TTL", 15*time.Minute)
 	if err != nil {
@@ -35,16 +40,29 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid REFRESH_TOKEN_TTL: %w", err)
 	}
 
+	resetTTL, err := parseDurationOrDefault("PASSWORD_RESET_TTL", time.Hour)
+	if err != nil {
+		return nil, fmt.Errorf("invalid PASSWORD_RESET_TTL: %w", err)
+	}
+
 	cfg := &Config{
 		Port:            getEnvOrDefault("PORT", "8080"),
 		DatabaseURL:     os.Getenv("DATABASE_URL"),
 		JWTSecret:       os.Getenv("JWT_SECRET"),
 		AccessTokenTTL:  accessTTL,
-		RefreshTokenTTL: refreshTTL,
-		SeedUsername:    os.Getenv("SEED_USERNAME"),
+		RefreshTokenTTL:  refreshTTL,
+		PasswordResetTTL: resetTTL,
+		SeedEmail:       os.Getenv("SEED_EMAIL"),
 		SeedPassword:    os.Getenv("SEED_PASSWORD"),
 		LogLevel:        getEnvOrDefault("LOG_LEVEL", "info"),
 		CORSOrigins:     parseCORSOrigins(os.Getenv("CORS_ORIGINS")),
+		PublicBaseURL:   strings.TrimRight(os.Getenv("PUBLIC_BASE_URL"), "/"),
+
+		SMTPHost:     os.Getenv("SMTP_HOST"),
+		SMTPPort:     getEnvOrDefault("SMTP_PORT", "587"),
+		SMTPUser:     os.Getenv("SMTP_USER"),
+		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
+		MailFrom:     os.Getenv("MAIL_FROM"),
 	}
 
 	if err := cfg.validate(); err != nil {
@@ -61,8 +79,8 @@ func (c *Config) validate() error {
 	if c.JWTSecret == "" {
 		return errors.New("JWT_SECRET is required")
 	}
-	if c.SeedUsername == "" {
-		return errors.New("SEED_USERNAME is required")
+	if c.SeedEmail == "" {
+		return errors.New("SEED_EMAIL is required")
 	}
 	if c.SeedPassword == "" {
 		return errors.New("SEED_PASSWORD is required")
@@ -77,7 +95,6 @@ func getEnvOrDefault(key, defaultValue string) string {
 	return defaultValue
 }
 
-// parseCORSOrigins splits CORS_ORIGINS by comma and trims spaces; empty string returns nil.
 func parseCORSOrigins(s string) []string {
 	if s == "" {
 		return nil
@@ -100,14 +117,25 @@ func parseDurationOrDefault(key string, defaultValue time.Duration) (time.Durati
 	return time.ParseDuration(v)
 }
 
-// Log prints the configuration to the log, masking sensitive values.
 func (c *Config) Log() {
 	log.Printf("Config loaded:")
 	log.Printf("  PORT=%s", c.Port)
 	log.Printf("  ACCESS_TOKEN_TTL=%s", c.AccessTokenTTL)
 	log.Printf("  REFRESH_TOKEN_TTL=%s", c.RefreshTokenTTL)
 	log.Printf("  LOG_LEVEL=%s", c.LogLevel)
+	if c.PublicBaseURL != "" {
+		log.Printf("  PUBLIC_BASE_URL=%s", c.PublicBaseURL)
+	}
 	if len(c.CORSOrigins) > 0 {
 		log.Printf("  CORS_ORIGINS=%v", c.CORSOrigins)
 	}
+	if c.SMTPHost != "" {
+		log.Printf("  SMTP_HOST=%s (mail enabled)", c.SMTPHost)
+	} else {
+		log.Printf("  SMTP not configured (transactional email disabled)")
+	}
+}
+
+func (c *Config) MailConfigured() bool {
+	return c.SMTPHost != "" && c.SMTPUser != "" && c.SMTPPassword != "" && c.MailFrom != ""
 }

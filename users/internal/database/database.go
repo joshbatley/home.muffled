@@ -1,47 +1,47 @@
-// Package database handles PostgreSQL connections and migrations.
 package database
 
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"log"
-	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
 	_ "github.com/lib/pq"
 )
 
-// Connect establishes a connection to the PostgreSQL database.
 func Connect(databaseURL string) (*sql.DB, error) {
 	db, err := sql.Open("postgres", databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("opening database: %w", err)
 	}
-
 	if err := db.Ping(); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("connecting to database: %w", err)
 	}
-
 	return db, nil
 }
 
-// MigrateUp applies all pending up migrations from the given directory.
-func MigrateUp(db *sql.DB, migrationsDir string) error {
+func MigrateUp(db *sql.DB, migrationsFS fs.FS) error {
 	if err := ensureMigrationsTable(db); err != nil {
 		return err
 	}
 
-	files, err := filepath.Glob(filepath.Join(migrationsDir, "*.up.sql"))
+	entries, err := fs.ReadDir(migrationsFS, ".")
 	if err != nil {
 		return fmt.Errorf("reading migrations: %w", err)
 	}
+
+	var files []string
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".up.sql") {
+			files = append(files, e.Name())
+		}
+	}
 	sort.Strings(files)
 
-	for _, file := range files {
-		name := filepath.Base(file)
+	for _, name := range files {
 		applied, err := isMigrationApplied(db, name)
 		if err != nil {
 			return err
@@ -51,7 +51,7 @@ func MigrateUp(db *sql.DB, migrationsDir string) error {
 			continue
 		}
 
-		content, err := os.ReadFile(file)
+		content, err := fs.ReadFile(migrationsFS, name)
 		if err != nil {
 			return fmt.Errorf("reading migration %s: %w", name, err)
 		}
@@ -64,41 +64,6 @@ func MigrateUp(db *sql.DB, migrationsDir string) error {
 		if err := recordMigration(db, name); err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-// MigrateDown rolls back the last applied migration.
-func MigrateDown(db *sql.DB, migrationsDir string) error {
-	if err := ensureMigrationsTable(db); err != nil {
-		return err
-	}
-
-	lastMigration, err := getLastMigration(db)
-	if err != nil {
-		return err
-	}
-	if lastMigration == "" {
-		log.Println("No migrations to roll back")
-		return nil
-	}
-
-	downFile := strings.Replace(lastMigration, ".up.sql", ".down.sql", 1)
-	downPath := filepath.Join(migrationsDir, downFile)
-
-	content, err := os.ReadFile(downPath)
-	if err != nil {
-		return fmt.Errorf("reading down migration %s: %w", downFile, err)
-	}
-
-	log.Printf("Rolling back migration: %s", lastMigration)
-	if _, err := db.Exec(string(content)); err != nil {
-		return fmt.Errorf("rolling back migration %s: %w", lastMigration, err)
-	}
-
-	if err := removeMigration(db, lastMigration); err != nil {
-		return err
 	}
 
 	return nil
@@ -130,6 +95,37 @@ func recordMigration(db *sql.DB, name string) error {
 	_, err := db.Exec("INSERT INTO migrations (name) VALUES ($1)", name)
 	if err != nil {
 		return fmt.Errorf("recording migration %s: %w", name, err)
+	}
+	return nil
+}
+
+func MigrateDown(db *sql.DB, migrationsFS fs.FS) error {
+	if err := ensureMigrationsTable(db); err != nil {
+		return err
+	}
+
+	lastMigration, err := getLastMigration(db)
+	if err != nil {
+		return err
+	}
+	if lastMigration == "" {
+		log.Println("No migrations to roll back")
+		return nil
+	}
+
+	downFile := strings.Replace(lastMigration, ".up.sql", ".down.sql", 1)
+	content, err := fs.ReadFile(migrationsFS, downFile)
+	if err != nil {
+		return fmt.Errorf("reading down migration %s: %w", downFile, err)
+	}
+
+	log.Printf("Rolling back migration: %s", lastMigration)
+	if _, err := db.Exec(string(content)); err != nil {
+		return fmt.Errorf("rolling back migration %s: %w", lastMigration, err)
+	}
+
+	if err := removeMigration(db, lastMigration); err != nil {
+		return err
 	}
 	return nil
 }
