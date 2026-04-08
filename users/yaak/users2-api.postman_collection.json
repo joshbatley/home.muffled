@@ -1,17 +1,35 @@
 {
   "info": {
     "_postman_id": "a1b2c3d4-users2-api",
-    "name": "users2 — home.muffled intranet auth",
-    "description": "Import into Yaak via Settings → Import (Postman v2.1). Set collection variables: baseUrl, then login and paste access_token into accessToken for protected requests.",
+    "name": "users2 \u2014 home.muffled intranet auth",
+    "description": "Import into Yaak via Settings \u2192 Import (Postman v2.1). Set collection variables: baseUrl, then login and paste access_token into accessToken for protected requests. Default local seed user: admin@home.muffled / changeme123.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8080" },
-    { "key": "accessToken", "value": "" },
-    { "key": "refreshToken", "value": "" },
-    { "key": "userId", "value": "00000000-0000-0000-0000-000000000000" },
-    { "key": "roleId", "value": "00000000-0000-0000-0000-000000000000" },
-    { "key": "permId", "value": "00000000-0000-0000-0000-000000000000" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "key": "roleId",
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "key": "permId",
+      "value": "00000000-0000-0000-0000-000000000000"
+    }
   ],
   "item": [
     {
@@ -42,10 +60,15 @@
           "name": "POST /v1/auth/login",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"your-password\"\n}"
+              "raw": "{\n  \"email\": \"admin@home.muffled\",\n  \"password\": \"changeme123\"\n}"
             },
             "url": "{{baseUrl}}/v1/auth/login"
           }
@@ -54,7 +77,12 @@
           "name": "POST /v1/auth/refresh",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
@@ -66,7 +94,12 @@
           "name": "POST /v1/auth/logout",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
@@ -78,7 +111,12 @@
           "name": "POST /v1/auth/forgot-password",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"user@example.com\"\n}"
@@ -90,7 +128,12 @@
           "name": "POST /v1/auth/reset-password",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"token\": \"paste-token-from-email\",\n  \"new_password\": \"new-secure-password\"\n}"
@@ -108,7 +151,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/auth/validate"
           }
@@ -123,7 +169,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/me"
           }
@@ -133,8 +182,14 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -148,8 +203,14 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -168,7 +229,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/users"
           }
@@ -178,8 +242,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -193,7 +263,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/users/{{userId}}"
           }
@@ -208,7 +281,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/roles"
           }
@@ -218,8 +294,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -233,7 +315,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/roles/{{roleId}}"
           }
@@ -243,8 +328,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -258,7 +349,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/roles/{{roleId}}/permissions/{{permId}}"
           }
@@ -268,7 +362,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/permissions"
           }
@@ -278,8 +375,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -293,7 +396,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/permissions/{{permId}}"
           }
@@ -301,15 +407,21 @@
       ]
     },
     {
-      "name": "User ↔ role / permission (admin)",
+      "name": "User \u2194 role / permission (admin)",
       "item": [
         {
           "name": "POST /v1/users/{id}/roles",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -323,7 +435,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/users/{{userId}}/roles/{{roleId}}"
           }
@@ -333,8 +448,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -348,7 +469,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/users/{{userId}}/permissions/{{permId}}"
           }
@@ -363,8 +487,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -377,10 +507,10 @@
     },
     {
       "name": "Flows (ordered)",
-      "description": "Suggested order: 1) Health → 2) Login → copy access_token & refresh_token into variables → 3) Validate / Me → 4) Admin calls as needed. New user: Login → PUT password (same userId) → login again. Forgot password: Forgot → use token from mail → Reset → Login.",
+      "description": "Suggested order: 1) Health \u2192 2) Login (set accessToken + refreshToken) \u2192 3) Validate/Me \u2192 4) If force_password_change=true run password change \u2192 5) Admin flows (users, roles, permissions, grants) \u2192 6) Authz check. Forgot password: Forgot \u2192 token from mail \u2192 Reset \u2192 Login.",
       "item": [
         {
-          "name": "01 — Health check",
+          "name": "01 \u2014 Health check",
           "request": {
             "method": "GET",
             "header": [],
@@ -388,48 +518,65 @@
           }
         },
         {
-          "name": "02 — Login (then set accessToken + refreshToken)",
+          "name": "02 \u2014 Login (then set accessToken + refreshToken)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"your-password\"\n}"
+              "raw": "{\n  \"email\": \"admin@home.muffled\",\n  \"password\": \"changeme123\"\n}"
             },
             "url": "{{baseUrl}}/v1/auth/login"
           }
         },
         {
-          "name": "03 — Validate token",
+          "name": "03 \u2014 Validate token",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/auth/validate"
           }
         },
         {
-          "name": "04 — Me (roles + permissions)",
+          "name": "04 \u2014 Me (roles + permissions)",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/me"
           }
         },
         {
-          "name": "05 — First-time password change (force_password_change)",
+          "name": "05 \u2014 First-time password change (force_password_change)",
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"old_password\": \"temporary-from-admin\",\n  \"new_password\": \"your-new-password\"\n}"
+              "raw": "{\n  \"old_password\": \"temporary-password\",\n  \"new_password\": \"your-new-password\"\n}"
             },
             "url": "{{baseUrl}}/v1/users/{{userId}}/password"
           }
