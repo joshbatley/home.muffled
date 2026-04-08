@@ -3,14 +3,16 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import {
-  clearRefreshToken,
-  getStoredRefreshToken,
-  setAccessToken,
+  ApiError,
+  loginRequest,
+  logoutRequest,
+  refreshSessionOrThrow,
   setLogoutHandler,
-  storeRefreshToken,
+  validateSession,
 } from "../api/client";
 
 interface AuthUser {
@@ -26,93 +28,91 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshClaims: () => Promise<void>;
+  setForcePasswordChanged: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function parseToken(token: string): AuthUser | null {
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return {
-      id: payload.user_id,
-      email: payload.email,
-      roles: payload.roles ?? [],
-      permissions: payload.permissions ?? [],
-      forcePasswordChange: payload.force_password_change ?? false,
-    };
-  } catch {
-    return null;
-  }
+function buildUser(data: {
+  user_id: string;
+  email: string;
+  roles: string[];
+  permissions: string[];
+  force_password_change: boolean;
+}): AuthUser {
+  return {
+    id: data.user_id,
+    email: data.email,
+    roles: data.roles || [],
+    permissions: data.permissions || [],
+    forcePasswordChange: Boolean(data.force_password_change),
+  };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const logout = useCallback(async () => {
-    const refresh = getStoredRefreshToken();
-    if (refresh) {
-      await fetch("/v1/auth/logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refresh }),
-      }).catch(() => {});
-    }
-    setAccessToken(null);
-    clearRefreshToken();
+  const clearAuth = useCallback(() => {
     setUser(null);
   }, []);
 
+  const refreshClaims = useCallback(async () => {
+    const valid = await validateSession();
+    setUser(buildUser(valid));
+  }, []);
+
+  const logout = useCallback(async () => {
+    await logoutRequest();
+    clearAuth();
+  }, [clearAuth]);
+
   useEffect(() => {
-    setLogoutHandler(logout);
+    setLogoutHandler(() => {
+      void logout();
+    });
   }, [logout]);
 
   useEffect(() => {
-    const refresh = getStoredRefreshToken();
-    if (!refresh) {
-      setIsLoading(false);
-      return;
-    }
-
-    fetch("/v1/auth/refresh", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refresh }),
-    })
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((data) => {
-        setAccessToken(data.access_token);
-        storeRefreshToken(data.refresh_token);
-        setUser(parseToken(data.access_token));
-      })
-      .catch(() => {
-        clearRefreshToken();
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
+    const bootstrap = async () => {
+      try {
+        await refreshSessionOrThrow();
+        await refreshClaims();
+      } catch {
+        clearAuth();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    void bootstrap();
+  }, [clearAuth, refreshClaims]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch("/v1/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!res.ok) {
-      throw new Error("Invalid credentials");
+    await loginRequest(email, password);
+    try {
+      await refreshClaims();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new Error("Failed to initialize session");
     }
+  }, [refreshClaims]);
 
-    const data = await res.json();
-    setAccessToken(data.access_token);
-    storeRefreshToken(data.refresh_token);
-    setUser(parseToken(data.access_token));
+  const setForcePasswordChanged = useCallback(() => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      return { ...prev, forcePasswordChange: false };
+    });
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ user, isLoading, login, logout, refreshClaims, setForcePasswordChanged }),
+    [user, isLoading, login, logout, refreshClaims, setForcePasswordChanged],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextValue {
