@@ -40,4 +40,4 @@ monitoring/prometheus/data/*
 monitoring/grafana/data/*
 !monitoring/grafana/data/.gitkeep
 
-portal/@mf-types/
+@mf-types/
