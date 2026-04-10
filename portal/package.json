@@ -1,5 +1,5 @@
 {
-  "name": "users-frontend",
+  "name": "portal",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -9,11 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@home/auth-ts": "file:../lib/auth-ts",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.5.0"
   },
   "devDependencies": {
+    "@module-federation/vite": "^1.8.1",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.4.1",

@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import { useAuth } from "@home/auth-ts";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
@@ -7,7 +8,6 @@ import {
   postNoContent,
   putJSON,
 } from "../api/client";
-import { useAuth } from "../context/auth";
 
 type UserData = {
   id: string;
@@ -22,7 +22,7 @@ type Permission = { id: string; key: string; description: string };
 export default function UserEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { logout, refreshClaims } = useAuth();
+  const { refreshClaims } = useAuth();
 
   const [user, setUser] = useState<UserData | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -156,23 +156,6 @@ export default function UserEditorPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="border-b border-gray-200 bg-white px-6 py-4">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <span className="font-semibold text-gray-900">home.muffled</span>
-          <div className="flex items-center gap-4">
-            <Link to="/users" className="text-sm text-gray-500 hover:text-gray-900">
-              Users
-            </Link>
-            <button
-              onClick={() => void logout()}
-              className="text-sm text-gray-500 hover:text-gray-900"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-      </nav>
-
       <main className="mx-auto max-w-5xl space-y-6 px-6 py-10">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold text-gray-900">Edit user</h1>
