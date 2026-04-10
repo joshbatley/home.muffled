@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { ApiError, apiJSON } from "../api/client";
-import { useAuth } from "../context/auth";
+import { useShellAuth } from "../context/shellAuth";
 
 interface MeData {
   id: string;
@@ -14,7 +13,7 @@ interface MeData {
 }
 
 export default function MePage() {
-  const { user, logout } = useAuth();
+  const { user } = useShellAuth();
   const [me, setMe] = useState<MeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,30 +40,6 @@ export default function MePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="border-b border-gray-200 bg-white px-6 py-4">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <span className="font-semibold text-gray-900">home.muffled</span>
-          <div className="flex items-center gap-4">
-            {user?.roles.includes("admin") && (
-              <>
-                <Link to="/users" className="text-sm text-gray-500 hover:text-gray-900">
-                  Users
-                </Link>
-                <Link to="/rbac" className="text-sm text-gray-500 hover:text-gray-900">
-                  RBAC
-                </Link>
-              </>
-            )}
-            <button
-              onClick={() => void logout()}
-              className="text-sm text-gray-500 hover:text-gray-900"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-      </nav>
-
       <main className="mx-auto max-w-3xl px-6 py-10">
         <h2 className="mb-6 text-xl font-semibold text-gray-900">My profile</h2>
 

@@ -10,3 +10,6 @@ monitoring/prometheus/data/*
 
 monitoring/grafana/data/*
 !monitoring/grafana/data/.gitkeep
+
+node_modules/
+dist/
