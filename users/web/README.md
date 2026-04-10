@@ -1,4 +1,4 @@
-# users frontend
+# users web
 
 Federated remote frontend for users domain screens.
 

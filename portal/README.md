@@ -10,4 +10,4 @@ Shell host frontend.
 
 ## Run
 
-Start `users/frontend` first, then start `portal`.
+Start `users/web` first, then start `portal`.

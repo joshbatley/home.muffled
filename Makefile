@@ -3,26 +3,26 @@
 setup: setup-fe setup-be
 
 setup-fe:
-	pnpm --dir "./users/frontend" install --no-frozen-lockfile
+	pnpm --dir "./users/web" install --no-frozen-lockfile
 	pnpm --dir "./portal" install --no-frozen-lockfile
 
 setup-be:
-	go -C "./users" mod download
+	go -C "./users/server" mod download
 
 dev: dev-fe dev-be
 
 dev-fe:
-	@echo "Starting users/frontend (:5174) and portal (:5173)"
+	@echo "Starting users/web (:5174) and portal (:5173)"
 	@sh -c 'trap "kill 0" INT TERM EXIT; \
-		pnpm --dir "./users/frontend" dev & \
+		pnpm --dir "./users/web" dev & \
 		pnpm --dir "./portal" dev & \
 		wait'
 
 dev-be:
-	$(MAKE) -C "./users" run
+	$(MAKE) -C "./users/server" run
 
 dev-users-fe:
-	pnpm --dir "./users/frontend" dev
+	pnpm --dir "./users/web" dev
 
 dev-portal:
 	pnpm --dir "./portal" dev
