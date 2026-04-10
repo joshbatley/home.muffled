@@ -13,9 +13,9 @@ import {
   refreshSessionOrThrow,
   setLogoutHandler,
   validateSession,
-} from "users-frontend/api/client";
+} from "./authClient";
 
-interface AuthUser {
+export interface AuthUser {
   id: string;
   email: string;
   roles: string[];
@@ -23,7 +23,7 @@ interface AuthUser {
   forcePasswordChange: boolean;
 }
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;

@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
+import { useAuth } from "@home/auth-ts";
 import { Link } from "react-router-dom";
 import { ApiError, apiJSON, postJSON } from "../api/client";
-import { useShellAuth } from "../context/shellAuth";
 
 interface UserRow {
   id: string;
@@ -16,7 +16,7 @@ interface Role {
 }
 
 export default function UsersPage() {
-  useShellAuth();
+  useAuth();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);

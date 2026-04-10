@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
-import { ApiError, postNoContent } from "users-frontend/api/client";
+import { ApiError, postNoContent } from "@home/auth-ts";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");

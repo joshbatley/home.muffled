@@ -1,18 +1,14 @@
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
-import {
-  MePage,
-  RolesPermissionsPage,
-  ShellAuthProvider,
-  UserEditorPage,
-  UsersPage,
-} from "users-frontend/domain";
+import { AuthProvider, useAuth } from "@home/auth-ts";
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import AppFrame from "./components/AppFrame";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { AuthProvider, useAuth } from "./context/auth";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+
+const UsersRoutesRemote = lazy(() => import("usersRemote/UsersRoutes"));
 
 function LoginRoute() {
   const { user, isLoading } = useAuth();
@@ -20,15 +16,6 @@ function LoginRoute() {
   if (user?.forcePasswordChange) return <Navigate to="/change-password" replace />;
   if (user) return <Navigate to="/me" replace />;
   return <LoginPage />;
-}
-
-function UsersDomainBridge() {
-  const { user, logout, refreshClaims } = useAuth();
-  return (
-    <ShellAuthProvider value={{ user, logout, refreshClaims }}>
-      <Outlet />
-    </ShellAuthProvider>
-  );
 }
 
 export default function App() {
@@ -46,19 +33,17 @@ export default function App() {
           </Route>
 
           <Route element={<ProtectedRoute />}>
-            <Route element={<UsersDomainBridge />}>
-              <Route element={<AppFrame />}>
-                <Route path="/me" element={<MePage />} />
-                <Route element={<ProtectedRoute requireAdmin />}>
-                  <Route path="/users" element={<UsersPage />} />
-                  <Route path="/users/:id" element={<UserEditorPage />} />
-                  <Route path="/rbac" element={<RolesPermissionsPage />} />
-                </Route>
-              </Route>
-            </Route>
+            <Route
+              path="*"
+              element={
+                <AppFrame>
+                  <Suspense fallback={<div className="p-6 text-sm text-gray-500">Loading app...</div>}>
+                    <UsersRoutesRemote />
+                  </Suspense>
+                </AppFrame>
+              }
+            />
           </Route>
-
-          <Route path="*" element={<Navigate to="/me" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

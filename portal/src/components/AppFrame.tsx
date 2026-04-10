@@ -1,7 +1,7 @@
 import { Link, Outlet } from "react-router-dom";
-import { useAuth } from "../context/auth";
+import { useAuth } from "@home/auth-ts";
 
-export default function AppFrame() {
+export default function AppFrame({ children }: { children?: React.ReactNode }) {
   const { user, logout } = useAuth();
 
   return (
@@ -32,7 +32,7 @@ export default function AppFrame() {
           </div>
         </div>
       </nav>
-      <Outlet />
+      {children ?? <Outlet />}
     </div>
   );
 }

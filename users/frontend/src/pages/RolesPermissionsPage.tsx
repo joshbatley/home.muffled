@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import { useAuth } from "@home/auth-ts";
 import {
   ApiError,
   apiJSON,
@@ -6,13 +7,12 @@ import {
   postJSON,
   postNoContent,
 } from "../api/client";
-import { useShellAuth } from "../context/shellAuth";
 
 type Role = { id: string; name: string };
 type Permission = { id: string; key: string; description: string };
 
 export default function RolesPermissionsPage() {
-  const { refreshClaims } = useShellAuth();
+  const { refreshClaims } = useAuth();
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);

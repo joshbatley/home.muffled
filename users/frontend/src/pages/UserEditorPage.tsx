@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import { useAuth } from "@home/auth-ts";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
@@ -7,7 +8,6 @@ import {
   postNoContent,
   putJSON,
 } from "../api/client";
-import { useShellAuth } from "../context/shellAuth";
 
 type UserData = {
   id: string;
@@ -22,7 +22,7 @@ type Permission = { id: string; key: string; description: string };
 export default function UserEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { refreshClaims } = useShellAuth();
+  const { refreshClaims } = useAuth();
 
   const [user, setUser] = useState<UserData | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);

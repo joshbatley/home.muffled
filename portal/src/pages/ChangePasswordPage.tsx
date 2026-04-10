@@ -1,7 +1,6 @@
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ApiError, putNoContent } from "users-frontend/api/client";
-import { useAuth } from "../context/auth";
+import { ApiError, putNoContent, useAuth } from "@home/auth-ts";
 
 export default function ChangePasswordPage() {
   const { user, logout, refreshClaims, setForcePasswordChanged } = useAuth();

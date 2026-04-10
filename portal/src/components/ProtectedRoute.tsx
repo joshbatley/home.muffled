@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "../context/auth";
+import { useAuth } from "@home/auth-ts";
 
 interface Props {
   requireAdmin?: boolean;

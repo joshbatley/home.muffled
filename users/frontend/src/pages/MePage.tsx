@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "@home/auth-ts";
 import { ApiError, apiJSON } from "../api/client";
-import { useShellAuth } from "../context/shellAuth";
 
 interface MeData {
   id: string;
@@ -13,7 +13,7 @@ interface MeData {
 }
 
 export default function MePage() {
-  const { user } = useShellAuth();
+  const { user } = useAuth();
   const [me, setMe] = useState<MeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
