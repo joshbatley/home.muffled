@@ -5,7 +5,7 @@ import { issueAccessToken, validateAccessToken } from "../src/auth/token.ts";
 
 describe("password", () => {
   test("hash and compare", async () => {
-    const h = await hashPassword("secret123");
+    const h = await hashPassword("secret123", 12);
     expect(await comparePassword(h, "secret123")).toBe(true);
     expect(await comparePassword(h, "wrong")).toBe(false);
   });

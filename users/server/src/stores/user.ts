@@ -72,10 +72,18 @@ export async function listUsers(sql: Sql): Promise<User[]> {
 
 export async function updateUser(sql: Sql, u: User): Promise<void> {
   const prefs = u.preferences ?? {};
-  const result = await sql`
-    UPDATE users SET email = ${u.email}, password_hash = ${u.password_hash}, force_password_change = ${u.force_password_change},
-      display_name = ${u.display_name}, avatar_url = ${u.avatar_url}, preferences = ${sql.json(prefs)}, updated_at = ${new Date()}
-    WHERE id = ${u.id}
-  `;
+  let result;
+  try {
+    result = await sql`
+      UPDATE users SET email = ${u.email}, password_hash = ${u.password_hash}, force_password_change = ${u.force_password_change},
+        display_name = ${u.display_name}, avatar_url = ${u.avatar_url}, preferences = ${sql.json(prefs)}, updated_at = ${new Date()}
+      WHERE id = ${u.id}
+    `;
+  } catch (e: unknown) {
+    if (e && typeof e === "object" && "code" in e && (e as { code: string }).code === "23505") {
+      throw new Error(ErrDuplicateEmail);
+    }
+    throw e;
+  }
   if (result.count === 0) throw new Error(ErrUserNotFound);
 }

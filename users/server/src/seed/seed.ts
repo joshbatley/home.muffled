@@ -1,21 +1,22 @@
 import { hashPassword } from "../auth/password.ts";
+import {
+  PERM_INTRANET_READ,
+  PERM_INTRANET_WRITE,
+  PERM_USERS_ADMIN,
+  ROLE_ADMIN,
+  ROLE_READONLY,
+  ROLE_USER,
+} from "../constants.ts";
 import type { Sql } from "../db/connection.ts";
 import * as permStore from "../stores/permission.ts";
 import * as roleStore from "../stores/role.ts";
 import * as userStore from "../stores/user.ts";
 
-export const PermIntranetRead = "intranet:read";
-export const PermIntranetWrite = "intranet:write";
-export const PermUsersAdmin = "users:admin";
-export const RoleAdmin = "admin";
-export const RoleUser = "user";
-export const RoleReadonly = "readonly";
-
 export async function seedDefaults(sql: Sql): Promise<void> {
   const keys = [
-    { key: PermIntranetRead, desc: "Read intranet resources" },
-    { key: PermIntranetWrite, desc: "Write intranet resources" },
-    { key: PermUsersAdmin, desc: "Manage users, roles, and permissions" },
+    { key: PERM_INTRANET_READ, desc: "Read intranet resources" },
+    { key: PERM_INTRANET_WRITE, desc: "Write intranet resources" },
+    { key: PERM_USERS_ADMIN, desc: "Manage users, roles, and permissions" },
   ];
 
   const permIds = new Map<string, string>();
@@ -35,9 +36,9 @@ export async function seedDefaults(sql: Sql): Promise<void> {
   }
 
   const roles = [
-    { name: RoleAdmin, keys: [PermIntranetRead, PermIntranetWrite, PermUsersAdmin] },
-    { name: RoleUser, keys: [PermIntranetRead, PermIntranetWrite] },
-    { name: RoleReadonly, keys: [PermIntranetRead] },
+    { name: ROLE_ADMIN, keys: [PERM_INTRANET_READ, PERM_INTRANET_WRITE, PERM_USERS_ADMIN] },
+    { name: ROLE_USER, keys: [PERM_INTRANET_READ, PERM_INTRANET_WRITE] },
+    { name: ROLE_READONLY, keys: [PERM_INTRANET_READ] },
   ];
 
   for (const rs of roles) {
@@ -49,10 +50,10 @@ export async function seedDefaults(sql: Sql): Promise<void> {
   }
 }
 
-export async function seedAdmin(sql: Sql, email: string, password: string): Promise<void> {
+export async function seedAdmin(sql: Sql, email: string, password: string, bcryptCost: number): Promise<void> {
   let u = await userStore.getUserByEmail(sql, email);
   if (!u) {
-    const hash = await hashPassword(password);
+    const hash = await hashPassword(password, bcryptCost);
     const id = crypto.randomUUID();
     u = {
       id,
@@ -68,7 +69,7 @@ export async function seedAdmin(sql: Sql, email: string, password: string): Prom
     await userStore.createUser(sql, u);
   }
 
-  const adminRole = await roleStore.getRoleByName(sql, RoleAdmin);
+  const adminRole = await roleStore.getRoleByName(sql, ROLE_ADMIN);
   if (!adminRole) throw new Error("admin role missing");
   await roleStore.assignRoleToUser(sql, u.id, adminRole.id);
 }

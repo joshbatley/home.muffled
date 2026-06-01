@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
-import { ApiError, postNoContent } from "@home/auth-ts";
+import { ApiError, forgotPassword } from "@home/auth-ts";
+import Input from "../components/Input";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -15,7 +16,7 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      await postNoContent("/v1/auth/forgot-password", { email });
+      await forgotPassword({ email });
       setStatus("If this email exists, a reset link was sent.");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Request failed");
@@ -35,13 +36,13 @@ export default function ForgotPasswordPage() {
             <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
               Email
             </label>
-            <input
+            <Input
               id="email"
               type="email"
               required
+              autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+              onChange={(event) => setEmail(event.target.value)}
             />
           </div>
 

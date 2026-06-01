@@ -1,5 +1,5 @@
 import { Link, Outlet } from "react-router-dom";
-import { useAuth } from "@home/auth-ts";
+import { hasRole, useAuth } from "@home/auth-ts";
 
 export default function AppFrame({ children }: { children?: React.ReactNode }) {
   const { user, logout } = useAuth();
@@ -13,7 +13,7 @@ export default function AppFrame({ children }: { children?: React.ReactNode }) {
             <Link to="/me" className="text-sm text-gray-500 hover:text-gray-900">
               Profile
             </Link>
-            {user?.roles.includes("admin") && (
+            {hasRole(user, "admin") && (
               <>
                 <Link to="/users" className="text-sm text-gray-500 hover:text-gray-900">
                   Users

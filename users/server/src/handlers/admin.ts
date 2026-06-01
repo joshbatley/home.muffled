@@ -1,10 +1,12 @@
 import { Hono } from "hono";
-import type { Sql } from "../db/connection.ts";
+import { isUuid } from "../constants.ts";
+import type { Deps } from "../deps.ts";
 import { jsonError } from "../response.ts";
 import * as permStore from "../stores/permission.ts";
 import * as roleStore from "../stores/role.ts";
 
-export function adminRoutes(sql: Sql) {
+export function adminRoutes(deps: Deps) {
+  const { sql } = deps;
   const app = new Hono();
 
   app.post("/v1/roles", async (c) => {
@@ -33,7 +35,7 @@ export function adminRoutes(sql: Sql) {
       return c.body(null, 204);
     } catch (e) {
       if (e instanceof Error && e.message === roleStore.ErrRoleNotFound) {
-        return jsonError(c, 404, "role not found");
+        return jsonError(c, 404, roleStore.ErrRoleNotFound);
       }
       return jsonError(c, 500, "failed to delete role");
     }
@@ -44,7 +46,7 @@ export function adminRoutes(sql: Sql) {
     if (!body) return jsonError(c, 400, "invalid request body");
     const roleId = c.req.param("id");
     for (const pid of body.permission_ids ?? []) {
-      if (!/^[0-9a-f-]{36}$/i.test(pid)) return jsonError(c, 400, "invalid permission id");
+      if (!isUuid(pid)) return jsonError(c, 400, "invalid permission id");
       try {
         await roleStore.assignPermission(sql, roleId, pid);
       } catch {
@@ -60,7 +62,7 @@ export function adminRoutes(sql: Sql) {
       return c.body(null, 204);
     } catch (e) {
       if (e instanceof Error && e.message === roleStore.ErrRoleNotFound) {
-        return jsonError(c, 404, "not found");
+        return jsonError(c, 404, roleStore.ErrRoleNotFound);
       }
       return jsonError(c, 500, "failed to remove permission");
     }
@@ -92,7 +94,7 @@ export function adminRoutes(sql: Sql) {
       return c.body(null, 204);
     } catch (e) {
       if (e instanceof Error && e.message === roleStore.ErrPermissionNotFound) {
-        return jsonError(c, 404, "permission not found");
+        return jsonError(c, 404, roleStore.ErrPermissionNotFound);
       }
       return jsonError(c, 500, "failed to delete permission");
     }
@@ -103,7 +105,7 @@ export function adminRoutes(sql: Sql) {
     if (!body) return jsonError(c, 400, "invalid request body");
     const userId = c.req.param("id");
     for (const rid of body.role_ids ?? []) {
-      if (!/^[0-9a-f-]{36}$/i.test(rid)) return jsonError(c, 400, "invalid role id");
+      if (!isUuid(rid)) return jsonError(c, 400, "invalid role id");
       try {
         await roleStore.assignRoleToUser(sql, userId, rid);
       } catch {
@@ -119,7 +121,7 @@ export function adminRoutes(sql: Sql) {
       return c.body(null, 204);
     } catch (e) {
       if (e instanceof Error && e.message === roleStore.ErrRoleNotFound) {
-        return jsonError(c, 404, "not found");
+        return jsonError(c, 404, roleStore.ErrRoleNotFound);
       }
       return jsonError(c, 500, "failed to remove role");
     }
@@ -130,7 +132,7 @@ export function adminRoutes(sql: Sql) {
     if (!body) return jsonError(c, 400, "invalid request body");
     const userId = c.req.param("id");
     for (const pid of body.permission_ids ?? []) {
-      if (!/^[0-9a-f-]{36}$/i.test(pid)) return jsonError(c, 400, "invalid permission id");
+      if (!isUuid(pid)) return jsonError(c, 400, "invalid permission id");
       try {
         await roleStore.grantPermissionToUser(sql, userId, pid);
       } catch {
@@ -146,7 +148,7 @@ export function adminRoutes(sql: Sql) {
       return c.body(null, 204);
     } catch (e) {
       if (e instanceof Error && e.message === roleStore.ErrRoleNotFound) {
-        return jsonError(c, 404, "not found");
+        return jsonError(c, 404, roleStore.ErrRoleNotFound);
       }
       return jsonError(c, 500, "failed to revoke permission");
     }

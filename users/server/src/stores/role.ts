@@ -8,6 +8,23 @@ export const ErrPermissionNotFound = "permission not found";
 export const ErrDuplicateRole = "role already exists";
 export const ErrDuplicatePermission = "permission key already exists";
 
+export function mapRole(row: Record<string, unknown>): Role {
+  return {
+    id: String(row.id),
+    name: String(row.name),
+    created_at: row.created_at as Date,
+  };
+}
+
+export function mapPermission(row: Record<string, unknown>): Permission {
+  return {
+    id: String(row.id),
+    key: String(row.key),
+    description: String(row.description),
+    created_at: row.created_at as Date,
+  };
+}
+
 export function roleNames(roles: Role[]): string[] {
   return roles.map((r) => r.name).sort();
 }
@@ -21,7 +38,7 @@ export async function createRole(sql: Sql, name: string): Promise<Role> {
     const rows = await sql`
       INSERT INTO roles (name) VALUES (${name}) RETURNING id, name, created_at
     `;
-    return rows[0] as Role;
+    return mapRole(rows[0] as Record<string, unknown>);
   } catch (e: unknown) {
     if (e && typeof e === "object" && "code" in e && (e as { code: string }).code === "23505") {
       throw new Error(ErrDuplicateRole);
@@ -32,16 +49,17 @@ export async function createRole(sql: Sql, name: string): Promise<Role> {
 
 export async function getRoleById(sql: Sql, id: string): Promise<Role | null> {
   const rows = await sql`SELECT id, name, created_at FROM roles WHERE id = ${id}`;
-  return rows.length ? (rows[0] as Role) : null;
+  return rows.length ? mapRole(rows[0] as Record<string, unknown>) : null;
 }
 
 export async function getRoleByName(sql: Sql, name: string): Promise<Role | null> {
   const rows = await sql`SELECT id, name, created_at FROM roles WHERE name = ${name}`;
-  return rows.length ? (rows[0] as Role) : null;
+  return rows.length ? mapRole(rows[0] as Record<string, unknown>) : null;
 }
 
 export async function listRoles(sql: Sql): Promise<Role[]> {
-  return (await sql`SELECT id, name, created_at FROM roles ORDER BY name`) as Role[];
+  const rows = await sql`SELECT id, name, created_at FROM roles ORDER BY name`;
+  return rows.map((r) => mapRole(r as Record<string, unknown>));
 }
 
 export async function deleteRole(sql: Sql, id: string): Promise<void> {
@@ -75,14 +93,15 @@ export async function removeRoleFromUser(sql: Sql, userId: string, roleId: strin
 }
 
 export async function getRolesByUserId(sql: Sql, userId: string): Promise<Role[]> {
-  return (await sql`
+  const rows = await sql`
     SELECT r.id, r.name, r.created_at FROM roles r
     JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = ${userId} ORDER BY r.name
-  `) as Role[];
+  `;
+  return rows.map((r) => mapRole(r as Record<string, unknown>));
 }
 
 export async function getPermissionsByUserId(sql: Sql, userId: string): Promise<Permission[]> {
-  return (await sql`
+  const rows = await sql`
     SELECT id, key, description, created_at FROM (
       SELECT DISTINCT p.id, p.key, p.description, p.created_at
       FROM permissions p
@@ -95,7 +114,8 @@ export async function getPermissionsByUserId(sql: Sql, userId: string): Promise<
       JOIN user_permission_grants ug ON p.id = ug.permission_id
       WHERE ug.user_id = ${userId}
     ) x ORDER BY key
-  `) as Permission[];
+  `;
+  return rows.map((r) => mapPermission(r as Record<string, unknown>));
 }
 
 export async function grantPermissionToUser(sql: Sql, userId: string, permissionId: string): Promise<void> {

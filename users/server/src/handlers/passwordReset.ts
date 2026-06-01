@@ -1,15 +1,12 @@
 import { Hono } from "hono";
 import { hashPassword } from "../auth/password.ts";
 import { generateRefreshToken, hashRefreshToken } from "../auth/refresh.ts";
-import type { Config } from "../config.ts";
-import type { Sql } from "../db/connection.ts";
-import type { Mailer } from "../mail/smtp.ts";
+import { MIN_PASSWORD_LENGTH } from "../constants.ts";
+import type { Deps } from "../deps.ts";
 import { passwordReset } from "../mail/templates.ts";
 import { jsonError } from "../response.ts";
 import * as resetStore from "../stores/passwordReset.ts";
 import * as userStore from "../stores/user.ts";
-
-type Deps = { sql: Sql; cfg: Config; mailer: Mailer };
 
 export function passwordResetRoutes(deps: Deps) {
   const app = new Hono();
@@ -41,7 +38,7 @@ export function passwordResetRoutes(deps: Deps) {
   app.post("/v1/auth/reset-password", async (c) => {
     const body = await c.req.json<{ token?: string; new_password?: string }>().catch(() => null);
     if (!body) return jsonError(c, 400, "invalid request body");
-    if (!body.token || (body.new_password?.length ?? 0) < 8) {
+    if (!body.token || (body.new_password?.length ?? 0) < MIN_PASSWORD_LENGTH) {
       return jsonError(c, 400, "invalid token or password");
     }
 
@@ -50,9 +47,9 @@ export function passwordResetRoutes(deps: Deps) {
     if (!rt) return jsonError(c, 401, "invalid or expired token");
 
     const u = await userStore.getUserById(deps.sql, rt.user_id);
-    if (!u) return jsonError(c, 404, "user not found");
+    if (!u) return jsonError(c, 404, userStore.ErrUserNotFound);
 
-    u.password_hash = await hashPassword(body.new_password!);
+    u.password_hash = await hashPassword(body.new_password!, deps.cfg.bcryptCost);
     u.force_password_change = false;
     try {
       await userStore.updateUser(deps.sql, u);

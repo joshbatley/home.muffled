@@ -1,17 +1,14 @@
 import { Hono } from "hono";
-import { comparePassword } from "../auth/password.ts";
+import { comparePassword, comparePasswordDummy } from "../auth/password.ts";
 import { generateRefreshToken, hashRefreshToken } from "../auth/refresh.ts";
 import { issueAccessToken } from "../auth/token.ts";
-import type { Config } from "../config.ts";
-import type { Sql } from "../db/connection.ts";
+import type { Deps } from "../deps.ts";
 import type { AppVariables } from "../middleware/auth.ts";
 import { getClaims } from "../middleware/auth.ts";
 import { jsonError } from "../response.ts";
 import * as refreshStore from "../stores/refreshToken.ts";
 import * as roleStore from "../stores/role.ts";
 import * as userStore from "../stores/user.ts";
-
-type Deps = { sql: Sql; cfg: Config };
 
 async function issueTokens(deps: Deps, userId: string, email: string, forcePasswordChange: boolean) {
   const roles = await roleStore.getRolesByUserId(deps.sql, userId);
@@ -39,7 +36,11 @@ export function authRoutes(deps: Deps) {
     const body = await c.req.json<{ email?: string; password?: string }>().catch(() => null);
     if (!body) return jsonError(c, 400, "invalid request body");
     const u = await userStore.getUserByEmail(deps.sql, body.email ?? "");
-    if (!u || !(await comparePassword(u.password_hash, body.password ?? ""))) {
+    if (!u) {
+      await comparePasswordDummy(body.password ?? "", deps.cfg.bcryptCost);
+      return jsonError(c, 401, "invalid credentials");
+    }
+    if (!(await comparePassword(u.password_hash, body.password ?? ""))) {
       return jsonError(c, 401, "invalid credentials");
     }
     try {
@@ -78,8 +79,8 @@ export function authRoutes(deps: Deps) {
   });
 
   app.post("/v1/auth/logout", async (c) => {
-    const body = await c.req.json<{ refresh_token?: string }>().catch(() => ({}));
-    if (body.refresh_token) {
+    const body = await c.req.json<{ refresh_token?: string }>().catch(() => null);
+    if (body?.refresh_token) {
       const hash = hashRefreshToken(body.refresh_token);
       const rt = await refreshStore.getRefreshTokenByHash(deps.sql, hash);
       if (rt) await refreshStore.revokeRefreshToken(deps.sql, rt.id);

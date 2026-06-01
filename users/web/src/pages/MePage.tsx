@@ -1,28 +1,16 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@home/auth-ts";
-import { ApiError, apiJSON } from "../api/client";
-
-interface MeData {
-  id: string;
-  email: string;
-  display_name: string;
-  avatar_url: string;
-  roles: string[];
-  permissions: string[];
-  force_password_change: boolean;
-}
+import { ApiError, getJSON, type MeResponse } from "@home/auth-ts";
 
 export default function MePage() {
-  const { user } = useAuth();
-  const [me, setMe] = useState<MeData | null>(null);
+  const [me, setMe] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const run = async () => {
+    const loadData = async () => {
       setLoading(true);
       try {
-        const data = await apiJSON<MeData>("/v1/me", { method: "GET" });
+        const data = await getJSON<MeResponse>("/v1/me");
         setMe(data);
         setError(null);
       } catch (err) {
@@ -35,18 +23,18 @@ export default function MePage() {
         setLoading(false);
       }
     };
-    void run();
+    void loadData();
   }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="mx-auto max-w-3xl px-6 py-10">
-        <h2 className="mb-6 text-xl font-semibold text-gray-900">My profile</h2>
+        <h1 className="mb-6 text-xl font-semibold text-gray-900">My profile</h1>
 
         {loading && <p className="text-sm text-gray-500">Loading profile...</p>}
 
         {error && (
-          <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-600">
+          <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </p>
         )}

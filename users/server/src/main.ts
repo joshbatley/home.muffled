@@ -12,7 +12,7 @@ async function main() {
 
   await migrateUp(sql);
   await seedDefaults(sql);
-  await seedAdmin(sql, cfg.seedEmail, cfg.seedPassword);
+  await seedAdmin(sql, cfg.seedEmail, cfg.seedPassword, cfg.bcryptCost);
 
   if (seedOnly) {
     console.log("seed complete");

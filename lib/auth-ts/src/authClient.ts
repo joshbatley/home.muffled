@@ -4,20 +4,78 @@ let accessToken: string | null = null;
 let onLogout: (() => void) | null = null;
 let refreshInFlight: Promise<string | null> | null = null;
 
-type TokenResponse = {
+export interface TokenResponse {
   access_token: string;
   refresh_token: string;
   force_password_change: boolean;
-};
+}
 
-export type ValidateResponse = {
+export interface ValidateResponse {
   user_id: string;
   email: string;
   roles: string[];
   permissions: string[];
   force_password_change: boolean;
   exp: number;
-};
+}
+
+export interface MeResponse {
+  id: string;
+  email: string;
+  display_name: string;
+  avatar_url: string;
+  roles: string[];
+  permissions: string[];
+  force_password_change: boolean;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  new_password: string;
+}
+
+export interface ChangePasswordRequest {
+  old_password: string;
+  new_password: string;
+}
+
+export interface CreateUserRequest {
+  email: string;
+  password: string;
+  role_ids: string[];
+}
+
+export interface UpdateUserRequest {
+  email: string;
+  display_name: string;
+  avatar_url: string;
+}
+
+export interface CreateRoleRequest {
+  name: string;
+}
+
+export interface CreatePermissionRequest {
+  key: string;
+  description: string;
+}
+
+export interface AssignRolesRequest {
+  role_ids: string[];
+}
+
+export interface AssignPermissionsRequest {
+  permission_ids: string[];
+}
 
 export class ApiError extends Error {
   status: number;
@@ -34,6 +92,10 @@ export function setAccessToken(token: string | null) {
 
 export function setLogoutHandler(fn: () => void) {
   onLogout = fn;
+}
+
+export function hasAccessToken(): boolean {
+  return Boolean(accessToken);
 }
 
 export function getStoredRefreshToken(): string | null {
@@ -130,21 +192,55 @@ export async function apiFetchOrThrow(input: string, init: RequestInit = {}): Pr
   return res;
 }
 
-export async function apiJSON<T>(input: string, init: RequestInit = {}): Promise<T> {
-  const res = await apiFetchOrThrow(input, init);
+export async function getJSON<T>(input: string): Promise<T> {
+  const res = await apiFetchOrThrow(input, { method: "GET" });
   return (await res.json()) as T;
 }
 
-export async function loginRequest(email: string, password: string) {
-  const res = await fetch("/v1/auth/login", {
+export async function postJSON<T>(input: string, body: unknown): Promise<T> {
+  const res = await apiFetchOrThrow(input, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(body),
   });
+  return (await res.json()) as T;
+}
 
-  if (!res.ok) {
-    throw new ApiError(res.status, await readErrorMessage(res));
-  }
+export async function putJSON<T>(input: string, body: unknown): Promise<T> {
+  const res = await apiFetchOrThrow(input, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+  return (await res.json()) as T;
+}
+
+export async function deleteJSON<T>(input: string): Promise<T> {
+  const res = await apiFetchOrThrow(input, { method: "DELETE" });
+  return (await res.json()) as T;
+}
+
+export async function postNoContent(input: string, body: unknown): Promise<void> {
+  await apiFetchOrThrow(input, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function putNoContent(input: string, body: unknown): Promise<void> {
+  await apiFetchOrThrow(input, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteNoContent(input: string): Promise<void> {
+  await apiFetchOrThrow(input, { method: "DELETE" });
+}
+
+export async function login(email: string, password: string): Promise<TokenResponse> {
+  const res = await apiFetchOrThrow("/v1/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password } satisfies LoginRequest),
+  });
 
   const data = (await res.json()) as TokenResponse;
   setAccessToken(data.access_token);
@@ -152,12 +248,11 @@ export async function loginRequest(email: string, password: string) {
   return data;
 }
 
-export async function logoutRequest() {
+export async function logout(): Promise<void> {
   const refresh = getStoredRefreshToken();
   if (refresh) {
-    await fetch("/v1/auth/logout", {
+    await apiFetch("/v1/auth/logout", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: refresh }),
     }).catch(() => {});
   }
@@ -165,7 +260,7 @@ export async function logoutRequest() {
   clearRefreshToken();
 }
 
-export async function refreshSessionOrThrow() {
+export async function refreshSession(): Promise<string> {
   const token = await refreshAccessTokenOnce();
   if (!token) {
     throw new ApiError(401, "Session expired");
@@ -174,19 +269,20 @@ export async function refreshSessionOrThrow() {
 }
 
 export async function validateSession(): Promise<ValidateResponse> {
-  return apiJSON<ValidateResponse>("/v1/auth/validate", { method: "GET" });
+  return getJSON<ValidateResponse>("/v1/auth/validate");
 }
 
-export async function postNoContent(input: string, body: unknown) {
-  await apiFetchOrThrow(input, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
+export async function changePassword(
+  userId: string,
+  req: ChangePasswordRequest,
+): Promise<void> {
+  await putNoContent(`/v1/users/${userId}/password`, req);
 }
 
-export async function putNoContent(input: string, body: unknown) {
-  await apiFetchOrThrow(input, {
-    method: "PUT",
-    body: JSON.stringify(body),
-  });
+export async function forgotPassword(req: ForgotPasswordRequest): Promise<void> {
+  await postNoContent("/v1/auth/forgot-password", req);
+}
+
+export async function resetPassword(req: ResetPasswordRequest): Promise<void> {
+  await postNoContent("/v1/auth/reset-password", req);
 }

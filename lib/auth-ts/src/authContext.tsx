@@ -8,11 +8,12 @@ import {
 } from "react";
 import {
   ApiError,
-  loginRequest,
-  logoutRequest,
-  refreshSessionOrThrow,
+  login as loginRequest,
+  logout as logoutRequest,
+  refreshSession,
   setLogoutHandler,
   validateSession,
+  type ValidateResponse,
 } from "./authClient";
 
 export interface AuthUser {
@@ -34,13 +35,7 @@ export interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function buildUser(data: {
-  user_id: string;
-  email: string;
-  roles: string[];
-  permissions: string[];
-  force_password_change: boolean;
-}): AuthUser {
+function buildUser(data: ValidateResponse): AuthUser {
   return {
     id: data.user_id,
     email: data.email,
@@ -77,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        await refreshSessionOrThrow();
+        await refreshSession();
         await refreshClaims();
       } catch {
         clearAuth();

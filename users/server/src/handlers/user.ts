@@ -1,23 +1,16 @@
 import { Hono } from "hono";
 import { hashPassword, comparePassword } from "../auth/password.ts";
-import type { Config } from "../config.ts";
-import type { Sql } from "../db/connection.ts";
-import type { Mailer } from "../mail/smtp.ts";
+import { isUuid, isValidEmail, MIN_PASSWORD_LENGTH } from "../constants.ts";
+import type { Deps } from "../deps.ts";
 import { welcomeIntranet } from "../mail/templates.ts";
 import type { AppVariables } from "../middleware/auth.ts";
-import { getClaims, PERM_USERS_ADMIN } from "../middleware/auth.ts";
+import { getClaims, isAdmin } from "../middleware/auth.ts";
 import { jsonError } from "../response.ts";
 import * as roleStore from "../stores/role.ts";
 import * as userStore from "../stores/user.ts";
 
-type Deps = { sql: Sql; cfg: Config; mailer: Mailer; intranetName: string };
-
 function isAdminOrSelf(claims: { user_id: string; roles: string[]; permissions: string[] }, userId: string) {
-  return (
-    claims.roles.includes("admin") ||
-    claims.permissions.includes(PERM_USERS_ADMIN) ||
-    claims.user_id === userId
-  );
+  return isAdmin(claims) || claims.user_id === userId;
 }
 
 function userResponse(u: userStore.User) {
@@ -35,7 +28,7 @@ export function userSelfRoutes(deps: Deps) {
   app.get("/v1/me", async (c) => {
     const claims = getClaims(c)!;
     const u = await userStore.getUserById(deps.sql, claims.user_id);
-    if (!u) return jsonError(c, 404, "user not found");
+    if (!u) return jsonError(c, 404, userStore.ErrUserNotFound);
     const roles = await roleStore.getRolesByUserId(deps.sql, u.id);
     const perms = await roleStore.getPermissionsByUserId(deps.sql, u.id);
     const prefs = u.preferences;
@@ -58,7 +51,7 @@ export function userSelfRoutes(deps: Deps) {
     const id = c.req.param("id");
     if (!isAdminOrSelf(claims, id)) return jsonError(c, 403, "forbidden");
     const u = await userStore.getUserById(deps.sql, id);
-    if (!u) return jsonError(c, 404, "user not found");
+    if (!u) return jsonError(c, 404, userStore.ErrUserNotFound);
     return c.json(userResponse(u));
   });
 
@@ -75,9 +68,9 @@ export function userSelfRoutes(deps: Deps) {
     if (!body) return jsonError(c, 400, "invalid request body");
 
     const u = await userStore.getUserById(deps.sql, id);
-    if (!u) return jsonError(c, 404, "user not found");
+    if (!u) return jsonError(c, 404, userStore.ErrUserNotFound);
     if (body.email !== undefined) {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) return jsonError(c, 400, "invalid email");
+      if (!isValidEmail(body.email)) return jsonError(c, 400, "invalid email");
       u.email = body.email;
     }
     if (body.display_name !== undefined) u.display_name = body.display_name;
@@ -85,7 +78,10 @@ export function userSelfRoutes(deps: Deps) {
     if (body.preferences !== undefined) u.preferences = body.preferences;
     try {
       await userStore.updateUser(deps.sql, u);
-    } catch {
+    } catch (e) {
+      if (e instanceof Error && e.message === userStore.ErrDuplicateEmail) {
+        return jsonError(c, 409, "email already exists");
+      }
       return jsonError(c, 500, "failed to update user");
     }
     return c.json(userResponse(u));
@@ -97,19 +93,17 @@ export function userSelfRoutes(deps: Deps) {
     if (!isAdminOrSelf(claims, id)) return jsonError(c, 403, "forbidden");
     const body = await c.req.json<{ old_password?: string; new_password?: string }>().catch(() => null);
     if (!body) return jsonError(c, 400, "invalid request body");
-    if ((body.new_password?.length ?? 0) < 8) return jsonError(c, 400, "password too short");
+    if ((body.new_password?.length ?? 0) < MIN_PASSWORD_LENGTH) return jsonError(c, 400, "password too short");
 
     const u = await userStore.getUserById(deps.sql, id);
-    if (!u) return jsonError(c, 404, "user not found");
+    if (!u) return jsonError(c, 404, userStore.ErrUserNotFound);
 
-    const isAdmin =
-      claims.roles.includes("admin") || claims.permissions.includes(PERM_USERS_ADMIN);
-    if (!isAdmin || claims.user_id === id) {
+    if (!isAdmin(claims) || claims.user_id === id) {
       if (!(await comparePassword(u.password_hash, body.old_password ?? ""))) {
         return jsonError(c, 401, "invalid old password");
       }
     }
-    u.password_hash = await hashPassword(body.new_password!);
+    u.password_hash = await hashPassword(body.new_password!, deps.cfg.bcryptCost);
     u.force_password_change = false;
     try {
       await userStore.updateUser(deps.sql, u);
@@ -133,9 +127,9 @@ export function userAdminRoutes(deps: Deps) {
   app.post("/v1/users", async (c) => {
     const body = await c.req.json<{ email?: string; password?: string; role_ids?: string[] }>().catch(() => null);
     if (!body?.email || !body.password) return jsonError(c, 400, "valid email and password required");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) return jsonError(c, 400, "valid email and password required");
+    if (!isValidEmail(body.email)) return jsonError(c, 400, "invalid email");
 
-    const hash = await hashPassword(body.password);
+    const hash = await hashPassword(body.password, deps.cfg.bcryptCost);
     const newUser: userStore.User = {
       id: crypto.randomUUID(),
       email: body.email,
@@ -157,7 +151,7 @@ export function userAdminRoutes(deps: Deps) {
     }
 
     for (const rid of body.role_ids ?? []) {
-      if (/^[0-9a-f-]{36}$/i.test(rid)) {
+      if (isUuid(rid)) {
         await roleStore.assignRoleToUser(deps.sql, newUser.id, rid).catch(() => {});
       }
     }
