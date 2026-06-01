@@ -1,23 +1,11 @@
 import { FormEvent, useEffect, useState } from "react";
-import { useAuth } from "@home/auth-ts";
 import { Link } from "react-router-dom";
-import { ApiError, apiJSON, postJSON } from "../api/client";
-
-interface UserRow {
-  id: string;
-  email: string;
-  display_name: string;
-  avatar_url: string;
-}
-
-interface Role {
-  id: string;
-  name: string;
-}
+import { ApiError, getJSON, postJSON } from "@home/auth-ts";
+import { fieldClassName } from "../components/field";
+import type { Role, UserSummary } from "../types";
 
 export default function UsersPage() {
-  useAuth();
-  const [users, setUsers] = useState<UserRow[]>([]);
+  const [users, setUsers] = useState<UserSummary[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,8 +20,8 @@ export default function UsersPage() {
     setError(null);
     try {
       const [usersRes, rolesRes] = await Promise.all([
-        apiJSON<UserRow[]>("/v1/users", { method: "GET" }),
-        apiJSON<Role[]>("/v1/roles", { method: "GET" }),
+        getJSON<UserSummary[]>("/v1/users"),
+        getJSON<Role[]>("/v1/roles"),
       ]);
       setUsers(usersRes);
       setRoles(rolesRes);
@@ -82,24 +70,26 @@ export default function UsersPage() {
           <h2 className="mb-4 text-lg font-semibold text-gray-900">Create user</h2>
           <form onSubmit={handleCreateUser} className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+              <label htmlFor="create-email" className="mb-1 block text-sm font-medium text-gray-700">Email</label>
               <input
+                id="create-email"
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                onChange={(event) => setEmail(event.target.value)}
+                className={fieldClassName}
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Temporary password</label>
+              <label htmlFor="create-password" className="mb-1 block text-sm font-medium text-gray-700">Temporary password</label>
               <input
+                id="create-password"
                 type="password"
                 required
                 minLength={8}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                onChange={(event) => setPassword(event.target.value)}
+                className={fieldClassName}
               />
             </div>
 
@@ -133,13 +123,13 @@ export default function UsersPage() {
 
         <section className="rounded-lg border border-gray-200 bg-white shadow-sm">
           <div className="border-b border-gray-200 px-6 py-4">
-            <h3 className="text-lg font-semibold text-gray-900">Users</h3>
+            <h2 className="text-lg font-semibold text-gray-900">Users</h2>
           </div>
 
           {loading && <p className="px-6 py-4 text-sm text-gray-500">Loading users...</p>}
 
           {error && (
-            <p className="m-6 rounded-md bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
+            <p className="m-6 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
           )}
 
           {!loading && !error && (
@@ -159,13 +149,13 @@ export default function UsersPage() {
                     </td>
                   </tr>
                 )}
-                {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-gray-900">{u.email}</td>
-                    <td className="px-6 py-4 text-gray-600">{u.display_name || "-"}</td>
+                {users.map((user) => (
+                  <tr key={user.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-gray-900">{user.email}</td>
+                    <td className="px-6 py-4 text-gray-600">{user.display_name || "-"}</td>
                     <td className="px-6 py-4">
                       <Link
-                        to={`/users/${u.id}`}
+                        to={`/users/${user.id}`}
                         className="text-sm text-gray-700 underline hover:text-gray-900"
                       >
                         Edit

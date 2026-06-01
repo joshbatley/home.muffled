@@ -1,15 +1,14 @@
 import { FormEvent, useEffect, useState } from "react";
-import { useAuth } from "@home/auth-ts";
 import {
   ApiError,
-  apiJSON,
   deleteNoContent,
+  getJSON,
   postJSON,
   postNoContent,
-} from "../api/client";
-
-type Role = { id: string; name: string };
-type Permission = { id: string; key: string; description: string };
+  useAuth,
+} from "@home/auth-ts";
+import { fieldClassName } from "../components/field";
+import type { Permission, Role } from "../types";
 
 export default function RolesPermissionsPage() {
   const { refreshClaims } = useAuth();
@@ -30,8 +29,8 @@ export default function RolesPermissionsPage() {
     setError(null);
     try {
       const [rolesData, permsData] = await Promise.all([
-        apiJSON<Role[]>("/v1/roles", { method: "GET" }),
-        apiJSON<Permission[]>("/v1/permissions", { method: "GET" }),
+        getJSON<Role[]>("/v1/roles"),
+        getJSON<Permission[]>("/v1/permissions"),
       ]);
       setRoles(rolesData);
       setPermissions(permsData);
@@ -152,8 +151,8 @@ export default function RolesPermissionsPage() {
               <input
                 placeholder="Role name"
                 value={roleName}
-                onChange={(e) => setRoleName(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                onChange={(event) => setRoleName(event.target.value)}
+                className={fieldClassName}
               />
               <button className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white">Create</button>
             </form>
@@ -164,7 +163,7 @@ export default function RolesPermissionsPage() {
                   <span>{role.name}</span>
                   <button
                     onClick={() => void deleteRole(role.id)}
-                    className="text-red-600 underline"
+                    className="rounded-md border border-red-300 px-3 py-1 text-sm text-red-700"
                   >
                     Delete
                   </button>
@@ -179,14 +178,14 @@ export default function RolesPermissionsPage() {
               <input
                 placeholder="Permission key (e.g. users:admin)"
                 value={permissionKey}
-                onChange={(e) => setPermissionKey(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                onChange={(event) => setPermissionKey(event.target.value)}
+                className={fieldClassName}
               />
               <input
                 placeholder="Description"
                 value={permissionDescription}
-                onChange={(e) => setPermissionDescription(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                onChange={(event) => setPermissionDescription(event.target.value)}
+                className={fieldClassName}
               />
               <button className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white">Create</button>
             </form>
@@ -197,7 +196,7 @@ export default function RolesPermissionsPage() {
                   <span>{permission.key}</span>
                   <button
                     onClick={() => void deletePermission(permission.id)}
-                    className="text-red-600 underline"
+                    className="rounded-md border border-red-300 px-3 py-1 text-sm text-red-700"
                   >
                     Delete
                   </button>
@@ -212,8 +211,8 @@ export default function RolesPermissionsPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <select
               value={selectedRoleId}
-              onChange={(e) => setSelectedRoleId(e.target.value)}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+              onChange={(event) => setSelectedRoleId(event.target.value)}
+              className={fieldClassName}
             >
               <option value="">Select role</option>
               {roles.map((role) => (
@@ -225,8 +224,8 @@ export default function RolesPermissionsPage() {
 
             <select
               value={selectedPermissionId}
-              onChange={(e) => setSelectedPermissionId(e.target.value)}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+              onChange={(event) => setSelectedPermissionId(event.target.value)}
+              className={fieldClassName}
             >
               <option value="">Select permission</option>
               {permissions.map((permission) => (

@@ -1,30 +1,22 @@
 import { FormEvent, useEffect, useState } from "react";
-import { useAuth } from "@home/auth-ts";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
-  apiJSON,
   deleteNoContent,
+  getJSON,
   postNoContent,
   putJSON,
-} from "../api/client";
-
-type UserData = {
-  id: string;
-  email: string;
-  display_name: string;
-  avatar_url: string;
-};
-
-type Role = { id: string; name: string };
-type Permission = { id: string; key: string; description: string };
+  useAuth,
+} from "@home/auth-ts";
+import { fieldClassName } from "../components/field";
+import type { Permission, Role, UserSummary } from "../types";
 
 export default function UserEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { refreshClaims } = useAuth();
 
-  const [user, setUser] = useState<UserData | null>(null);
+  const [user, setUser] = useState<UserSummary | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
 
@@ -38,25 +30,26 @@ export default function UserEditorPage() {
   const [revokePermissionId, setRevokePermissionId] = useState("");
 
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
-  async function load() {
+  async function loadData() {
     if (!id) return;
     setLoading(true);
     setError(null);
     try {
-      const [u, rs, ps] = await Promise.all([
-        apiJSON<UserData>(`/v1/users/${id}`, { method: "GET" }),
-        apiJSON<Role[]>("/v1/roles", { method: "GET" }),
-        apiJSON<Permission[]>("/v1/permissions", { method: "GET" }),
+      const [userData, rolesData, permsData] = await Promise.all([
+        getJSON<UserSummary>(`/v1/users/${id}`),
+        getJSON<Role[]>("/v1/roles"),
+        getJSON<Permission[]>("/v1/permissions"),
       ]);
-      setUser(u);
-      setRoles(rs);
-      setPermissions(ps);
-      setEmail(u.email || "");
-      setDisplayName(u.display_name || "");
-      setAvatarUrl(u.avatar_url || "");
+      setUser(userData);
+      setRoles(rolesData);
+      setPermissions(permsData);
+      setEmail(userData.email || "");
+      setDisplayName(userData.display_name || "");
+      setAvatarUrl(userData.avatar_url || "");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to load user");
     } finally {
@@ -65,24 +58,27 @@ export default function UserEditorPage() {
   }
 
   useEffect(() => {
-    void load();
+    void loadData();
   }, [id]);
 
   async function handleSaveProfile(event: FormEvent) {
     event.preventDefault();
     if (!id) return;
+    setSubmitting(true);
     setStatus(null);
     setError(null);
     try {
-      await putJSON<UserData>(`/v1/users/${id}`, {
+      await putJSON<UserSummary>(`/v1/users/${id}`, {
         email,
         display_name: displayName,
         avatar_url: avatarUrl,
       });
       setStatus("Profile updated.");
-      await load();
+      await loadData();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to update user");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -177,33 +173,39 @@ export default function UserEditorPage() {
               <h2 className="mb-4 text-lg font-semibold text-gray-900">Profile</h2>
               <form onSubmit={handleSaveProfile} className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                  <label htmlFor="profile-email" className="mb-1 block text-sm font-medium text-gray-700">Email</label>
                   <input
+                    id="profile-email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    onChange={(event) => setEmail(event.target.value)}
+                    className={fieldClassName}
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Display name</label>
+                  <label htmlFor="profile-display-name" className="mb-1 block text-sm font-medium text-gray-700">Display name</label>
                   <input
+                    id="profile-display-name"
                     value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    onChange={(event) => setDisplayName(event.target.value)}
+                    className={fieldClassName}
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Avatar URL</label>
+                  <label htmlFor="profile-avatar-url" className="mb-1 block text-sm font-medium text-gray-700">Avatar URL</label>
                   <input
+                    id="profile-avatar-url"
                     value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    onChange={(event) => setAvatarUrl(event.target.value)}
+                    className={fieldClassName}
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <button className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700">
-                    Save profile
+                  <button
+                    disabled={submitting}
+                    className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+                  >
+                    {submitting ? "Saving..." : "Save profile"}
                   </button>
                 </div>
               </form>
@@ -217,8 +219,8 @@ export default function UserEditorPage() {
                 <div className="mb-3 flex gap-2">
                   <select
                     value={selectedRoleId}
-                    onChange={(e) => setSelectedRoleId(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    onChange={(event) => setSelectedRoleId(event.target.value)}
+                    className={fieldClassName}
                   >
                     <option value="">Select role</option>
                     {roles.map((role) => (
@@ -236,8 +238,8 @@ export default function UserEditorPage() {
                   <input
                     placeholder="Role ID to remove"
                     value={removeRoleId}
-                    onChange={(e) => setRemoveRoleId(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    onChange={(event) => setRemoveRoleId(event.target.value)}
+                    className={fieldClassName}
                   />
                   <button onClick={removeRole} className="rounded-md border border-red-300 px-3 py-2 text-sm text-red-700">
                     Remove
@@ -252,8 +254,8 @@ export default function UserEditorPage() {
                 <div className="mb-3 flex gap-2">
                   <select
                     value={selectedPermissionId}
-                    onChange={(e) => setSelectedPermissionId(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    onChange={(event) => setSelectedPermissionId(event.target.value)}
+                    className={fieldClassName}
                   >
                     <option value="">Select permission</option>
                     {permissions.map((permission) => (
@@ -271,8 +273,8 @@ export default function UserEditorPage() {
                   <input
                     placeholder="Permission ID to revoke"
                     value={revokePermissionId}
-                    onChange={(e) => setRevokePermissionId(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    onChange={(event) => setRevokePermissionId(event.target.value)}
+                    className={fieldClassName}
                   />
                   <button onClick={revokePermission} className="rounded-md border border-red-300 px-3 py-2 text-sm text-red-700">
                     Remove

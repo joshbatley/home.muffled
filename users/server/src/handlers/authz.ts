@@ -1,11 +1,12 @@
 import { Hono } from "hono";
-import type { Sql } from "../db/connection.ts";
+import type { Deps } from "../deps.ts";
 import type { AppVariables } from "../middleware/auth.ts";
-import { getClaims } from "../middleware/auth.ts";
+import { getClaims, isAdmin } from "../middleware/auth.ts";
 import { jsonError } from "../response.ts";
 import * as roleStore from "../stores/role.ts";
 
-export function authzRoutes(sql: Sql) {
+export function authzRoutes(deps: Deps) {
+  const { sql } = deps;
   const app = new Hono<{ Variables: AppVariables }>();
 
   app.post("/v1/authz/check", async (c) => {
@@ -18,8 +19,8 @@ export function authzRoutes(sql: Sql) {
     }
 
     const roles = await roleStore.getRolesByUserId(sql, claims.user_id);
-    for (const ro of roles) {
-      if (ro.name === "admin") return c.json({ allowed: true, reason: "admin" });
+    if (isAdmin({ roles: roleStore.roleNames(roles), permissions: [] })) {
+      return c.json({ allowed: true, reason: "admin" });
     }
     const perms = await roleStore.getPermissionsByUserId(sql, claims.user_id);
     const allowed = perms.some((p) => p.key === body.permission);

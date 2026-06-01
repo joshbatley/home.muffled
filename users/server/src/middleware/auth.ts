@@ -2,8 +2,8 @@ import type { Context, MiddlewareHandler } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { Claims } from "../auth/token.ts";
 import { validateAccessToken } from "../auth/token.ts";
-
-export const PERM_USERS_ADMIN = "users:admin";
+import { PERM_USERS_ADMIN, ROLE_ADMIN } from "../constants.ts";
+import { jsonError } from "../response.ts";
 
 export type AppVariables = {
   claims: Claims;
@@ -14,19 +14,23 @@ export function getClaims(c: Context<{ Variables: AppVariables }>): Claims | und
   return c.get("claims");
 }
 
+export function isAdmin(claims: { roles: string[]; permissions: string[] }): boolean {
+  return claims.roles.includes(ROLE_ADMIN) || claims.permissions.includes(PERM_USERS_ADMIN);
+}
+
 export function authMiddleware(secret: string): MiddlewareHandler<{ Variables: AppVariables }> {
   return createMiddleware(async (c, next) => {
     const authHeader = c.req.header("Authorization");
     if (!authHeader) {
-      return c.text("missing authorization header", 401);
+      return jsonError(c, 401, "missing authorization header");
     }
     const match = authHeader.match(/^Bearer (.+)$/);
     if (!match) {
-      return c.text("invalid authorization header", 401);
+      return jsonError(c, 401, "invalid authorization header");
     }
     const claims = await validateAccessToken(secret, match[1]);
     if (!claims) {
-      return c.text("invalid token", 401);
+      return jsonError(c, 401, "invalid token");
     }
     c.set("claims", claims);
     c.set("jwtSecret", secret);
@@ -37,19 +41,19 @@ export function authMiddleware(secret: string): MiddlewareHandler<{ Variables: A
 export function adminMiddleware(): MiddlewareHandler<{ Variables: AppVariables }> {
   return createMiddleware(async (c, next) => {
     const claims = getClaims(c);
-    if (!claims) return c.text("unauthorized", 401);
-    if (claims.roles.includes("admin") || claims.permissions.includes(PERM_USERS_ADMIN)) {
+    if (!claims) return jsonError(c, 401, "unauthorized");
+    if (isAdmin(claims)) {
       await next();
       return;
     }
-    return c.text("forbidden", 403);
+    return jsonError(c, 403, "forbidden");
   });
 }
 
 export function forcePasswordChangeMiddleware(): MiddlewareHandler<{ Variables: AppVariables }> {
   return createMiddleware(async (c, next) => {
     const claims = getClaims(c);
-    if (!claims) return c.text("unauthorized", 401);
+    if (!claims) return jsonError(c, 401, "unauthorized");
     if (!claims.force_password_change) {
       await next();
       return;
@@ -61,6 +65,6 @@ export function forcePasswordChangeMiddleware(): MiddlewareHandler<{ Variables: 
       await next();
       return;
     }
-    return c.text("password change required", 403);
+    return jsonError(c, 403, "password change required");
   });
 }

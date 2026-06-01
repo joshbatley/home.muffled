@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { Hono } from "hono";
 import type { Claims } from "../src/auth/token.ts";
+import { PERM_USERS_ADMIN } from "../src/constants.ts";
 import {
   adminMiddleware,
   forcePasswordChangeMiddleware,
-  PERM_USERS_ADMIN,
   type AppVariables,
 } from "../src/middleware/auth.ts";
 

@@ -15,6 +15,7 @@ export type Config = {
   smtpUser: string;
   smtpPassword: string;
   mailFrom: string;
+  bcryptCost: number;
 };
 
 function envOrDefault(key: string, defaultValue: string): string {
@@ -46,21 +47,22 @@ function parseCorsOrigins(s: string | undefined): string[] {
 export function loadConfig(): Config {
   const cfg: Config = {
     port: envOrDefault("PORT", "8080"),
-    databaseUrl: process.env.DATABASE_URL ?? "",
-    jwtSecret: process.env.JWT_SECRET ?? "",
-    accessTokenTtlMs: parseDurationMs("ACCESS_TOKEN_TTL", 15 * 60 * 1000),
-    refreshTokenTtlMs: parseDurationMs("REFRESH_TOKEN_TTL", 7 * 24 * 60 * 60 * 1000),
-    passwordResetTtlMs: parseDurationMs("PASSWORD_RESET_TTL", 60 * 60 * 1000),
-    seedEmail: process.env.SEED_EMAIL ?? "",
-    seedPassword: process.env.SEED_PASSWORD ?? "",
+    databaseUrl: envOrDefault("DATABASE_URL", ""),
+    jwtSecret: envOrDefault("JWT_SECRET", ""),
+    accessTokenTtlMs: parseDurationMs("ACCESS_TOKEN_TTL", 15 * 60_000),
+    refreshTokenTtlMs: parseDurationMs("REFRESH_TOKEN_TTL", 7 * 24 * 60 * 60_000),
+    passwordResetTtlMs: parseDurationMs("PASSWORD_RESET_TTL", 60 * 60_000),
+    seedEmail: envOrDefault("SEED_EMAIL", ""),
+    seedPassword: envOrDefault("SEED_PASSWORD", ""),
     logLevel: envOrDefault("LOG_LEVEL", "info"),
-    corsOrigins: parseCorsOrigins(process.env.CORS_ORIGINS),
-    publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? "").replace(/\/$/, ""),
-    smtpHost: process.env.SMTP_HOST ?? "",
+    corsOrigins: parseCorsOrigins(envOrDefault("CORS_ORIGINS", "")),
+    publicBaseUrl: envOrDefault("PUBLIC_BASE_URL", "").replace(/\/$/, ""),
+    smtpHost: envOrDefault("SMTP_HOST", ""),
     smtpPort: envOrDefault("SMTP_PORT", "587"),
-    smtpUser: process.env.SMTP_USER ?? "",
-    smtpPassword: process.env.SMTP_PASSWORD ?? "",
-    mailFrom: process.env.MAIL_FROM ?? "",
+    smtpUser: envOrDefault("SMTP_USER", ""),
+    smtpPassword: envOrDefault("SMTP_PASSWORD", ""),
+    mailFrom: envOrDefault("MAIL_FROM", ""),
+    bcryptCost: Number(envOrDefault("BCRYPT_COST", "12")),
   };
 
   if (!cfg.databaseUrl) throw new Error("DATABASE_URL is required");

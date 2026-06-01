@@ -1,6 +1,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ApiError, postNoContent } from "@home/auth-ts";
+import { ApiError, resetPassword } from "@home/auth-ts";
+import Input from "../components/Input";
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -18,10 +19,7 @@ export default function ResetPasswordPage() {
     setError(null);
 
     try {
-      await postNoContent("/v1/auth/reset-password", {
-        token,
-        new_password: newPassword,
-      });
+      await resetPassword({ token, new_password: newPassword });
       setStatus("Password reset complete. You can now sign in.");
       setNewPassword("");
     } catch (err) {
@@ -48,14 +46,14 @@ export default function ResetPasswordPage() {
             <label htmlFor="new-password" className="mb-1 block text-sm font-medium text-gray-700">
               New password
             </label>
-            <input
+            <Input
               id="new-password"
               type="password"
               minLength={8}
               required
+              autoComplete="new-password"
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+              onChange={(event) => setNewPassword(event.target.value)}
             />
           </div>
 

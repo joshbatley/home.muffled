@@ -1,7 +1,8 @@
-import { AuthProvider, useAuth } from "@home/auth-ts";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AuthProvider, useAuth } from "@home/auth-ts";
 import AppFrame from "./components/AppFrame";
+import Loading from "./components/Loading";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -10,9 +11,11 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 const UsersRoutesRemote = lazy(() => import("usersRemote/UsersRoutes"));
 
+const RESET_PASSWORD_PATHS = ["/reset-password", "/reset"];
+
 function LoginRoute() {
   const { user, isLoading } = useAuth();
-  if (isLoading) return null;
+  if (isLoading) return <Loading />;
   if (user?.forcePasswordChange) return <Navigate to="/change-password" replace />;
   if (user) return <Navigate to="/me" replace />;
   return <LoginPage />;
@@ -25,8 +28,9 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginRoute />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/reset" element={<ResetPasswordPage />} />
+          {RESET_PASSWORD_PATHS.map((path) => (
+            <Route key={path} path={path} element={<ResetPasswordPage />} />
+          ))}
 
           <Route element={<ProtectedRoute allowForcePasswordChange />}>
             <Route path="/change-password" element={<ChangePasswordPage />} />

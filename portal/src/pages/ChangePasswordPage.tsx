@@ -1,9 +1,10 @@
 import { FormEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ApiError, putNoContent, useAuth } from "@home/auth-ts";
+import { Navigate, useNavigate } from "react-router-dom";
+import { ApiError, changePassword, refreshSession, useAuth } from "@home/auth-ts";
+import Input from "../components/Input";
 
 export default function ChangePasswordPage() {
-  const { user, logout, refreshClaims, setForcePasswordChanged } = useAuth();
+  const { user, logout, refreshClaims } = useAuth();
   const navigate = useNavigate();
 
   const [oldPassword, setOldPassword] = useState("");
@@ -11,7 +12,7 @@ export default function ChangePasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (!user) return null;
+  if (!user) return <Navigate to="/login" replace />;
   const userId = user.id;
 
   async function handleSubmit(event: FormEvent) {
@@ -20,11 +21,11 @@ export default function ChangePasswordPage() {
     setError(null);
 
     try {
-      await putNoContent(`/v1/users/${userId}/password`, {
+      await changePassword(userId, {
         old_password: oldPassword,
         new_password: newPassword,
       });
-      setForcePasswordChanged();
+      await refreshSession();
       await refreshClaims();
       navigate("/me", { replace: true });
     } catch (err) {
@@ -38,34 +39,34 @@ export default function ChangePasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
         <h1 className="mb-2 text-xl font-semibold text-gray-900">Change password</h1>
-        <p className="mb-6 text-sm text-amber-700">Password change is required before continuing.</p>
+        <p className="mb-6 text-sm text-gray-500">Password change is required before continuing.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="old-password" className="mb-1 block text-sm font-medium text-gray-700">
               Current password
             </label>
-            <input
+            <Input
               id="old-password"
               type="password"
               required
+              autoComplete="current-password"
               value={oldPassword}
-              onChange={(e) => setOldPassword(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+              onChange={(event) => setOldPassword(event.target.value)}
             />
           </div>
           <div>
             <label htmlFor="new-password" className="mb-1 block text-sm font-medium text-gray-700">
               New password
             </label>
-            <input
+            <Input
               id="new-password"
               type="password"
               minLength={8}
               required
+              autoComplete="new-password"
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+              onChange={(event) => setNewPassword(event.target.value)}
             />
           </div>
 

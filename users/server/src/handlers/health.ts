@@ -1,8 +1,9 @@
 import { Hono } from "hono";
-import type { Sql } from "../db/connection.ts";
+import type { Deps } from "../deps.ts";
 import { jsonError } from "../response.ts";
 
-export function healthRoutes(sql: Sql) {
+export function healthRoutes(deps: Deps) {
+  const { sql } = deps;
   const app = new Hono();
 
   app.get("/v1/health", (c) => c.json({ status: "ok" }));

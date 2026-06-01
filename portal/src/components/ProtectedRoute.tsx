@@ -1,23 +1,16 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@home/auth-ts";
+import Loading from "./Loading";
 
 interface Props {
-  requireAdmin?: boolean;
   allowForcePasswordChange?: boolean;
 }
 
-export default function ProtectedRoute({
-  requireAdmin = false,
-  allowForcePasswordChange = false,
-}: Props) {
+export default function ProtectedRoute({ allowForcePasswordChange = false }: Props) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center text-gray-500">
-        Loading...
-      </div>
-    );
+    return <Loading />;
   }
 
   if (!user) {
@@ -26,10 +19,6 @@ export default function ProtectedRoute({
 
   if (user.forcePasswordChange && !allowForcePasswordChange) {
     return <Navigate to="/change-password" replace />;
-  }
-
-  if (requireAdmin && !user.roles.includes("admin")) {
-    return <Navigate to="/me" replace />;
   }
 
   return <Outlet />;
