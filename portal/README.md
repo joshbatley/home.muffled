@@ -10,9 +10,12 @@ Shell host frontend.
 
 ## Run
 
-Start `users/frontend` first, then start `portal`:
+Start `users/web` first, then start `portal`:
 
 ```bash
-cd users/frontend && bun run dev
-cd portal && bun run dev
+make dev-users-web   # :5174
+make dev-portal      # :5173
+# or: make dev-fe
 ```
+
+Ensure the API is running (`make -C users run`) on `:8080`.

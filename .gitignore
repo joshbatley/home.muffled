@@ -1,15 +1,41 @@
 .DS_Store
 .cursor/
+
+# JS/TS/React
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+.next/
+.nuxt/
+.svelte-kit/
+.parcel-cache/
+.vite/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tsbuildinfo
+.__mf__temp/
+@mf-types/
+*.local
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Go (legacy)
+bin/
+pkg/
+*.test
+*.out
+coverage.out
+
 users/bin/
-users/frontend/node_modules/
-users/frontend/dist/
-users/frontend/tsconfig.tsbuildinfo
-users/server/node_modules/
-portal/node_modules/
-portal/dist/
-portal/tsconfig.tsbuildinfo
-portal/.__mf__temp/
-lib/auth-ts/node_modules/
+
 # Ignore contents of Prometheus and Grafana data dirs, but keep the dirs themselves
 monitoring/prometheus/data/*
 !monitoring/prometheus/data/.gitkeep
