@@ -1,12 +1,13 @@
 # `@home/auth-ts`
 
-Shared frontend auth runtime for host and remote apps.
+Shared frontend auth runtime and the single HTTP client used by host and remote apps.
 
 ## What it provides
 
 - `AuthProvider` and `useAuth()` context consumer
-- user/session lifecycle: login, logout, refresh, validate
-- auth-aware HTTP helpers (`apiFetch`, `apiJSON`, etc.)
+- user/session lifecycle: `login`, `logout`, `refreshSession`, `validateSession`
+- the single auth-aware HTTP client: `apiFetch`/`apiFetchOrThrow`, JSON helpers (`getJSON`, `postJSON`, `putJSON`, `deleteJSON`) and no-content helpers (`postNoContent`, `putNoContent`, `deleteNoContent`)
+- typed request/response wire types and domain helpers (`changePassword`, `forgotPassword`, `resetPassword`)
 - permission helpers (`hasRole`, `hasPermission`, `hasAnyPermission`)
 
 ## How it works
