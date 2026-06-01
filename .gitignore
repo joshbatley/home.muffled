@@ -4,6 +4,12 @@ users/bin/
 users/frontend/node_modules/
 users/frontend/dist/
 users/frontend/tsconfig.tsbuildinfo
+users/server/node_modules/
+portal/node_modules/
+portal/dist/
+portal/tsconfig.tsbuildinfo
+portal/.__mf__temp/
+lib/auth-ts/node_modules/
 # Ignore contents of Prometheus and Grafana data dirs, but keep the dirs themselves
 monitoring/prometheus/data/*
 !monitoring/prometheus/data/.gitkeep
