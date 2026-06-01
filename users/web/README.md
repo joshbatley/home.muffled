@@ -5,7 +5,7 @@ Federated remote frontend for users domain screens.
 ## Responsibilities
 
 - exposes `./UsersRoutes` for host consumption
-- uses shared auth runtime from `@home/auth-ts`
+- uses the shared auth runtime and HTTP client from `@home/auth-ts`
 - keeps users/admin domain UI and calls users APIs
 
 ## Run
