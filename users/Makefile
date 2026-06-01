@@ -1,27 +1,30 @@
-.PHONY: all build test vet tidy run postgres-up postgres-down seed-admin
+.PHONY: all test run dev postgres-up postgres-down seed-admin web-install web-dev web-build
 
-all: test build
-
-build:
-	go build -o bin/server ./cmd/server
+all: test
 
 test:
-	go test ./...
-
-vet:
-	go vet ./...
-
-tidy:
-	go mod tidy
+	cd server && bun test
 
 run:
-	go run ./cmd/server
+	cd server && bun run start
 
-postgres-up:
-	docker compose up -d postgres
-
-postgres-down:
-	docker compose down
+dev:
+	cd server && bun run dev
 
 seed-admin:
-	go run ./cmd/server -seed-admin
+	cd server && bun run seed-admin
+
+postgres-up:
+	cd server && docker compose up -d postgres
+
+postgres-down:
+	cd server && docker compose down
+
+web-install:
+	cd web && bun install
+
+web-dev:
+	cd web && bun run dev
+
+web-build:
+	cd web && bun run build

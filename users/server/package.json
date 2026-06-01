@@ -1,0 +1,24 @@
+{
+  "name": "users-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/main.ts",
+    "start": "bun run src/main.ts",
+    "seed-admin": "bun run src/main.ts --seed-admin",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "hono": "^4.7.10",
+    "jose": "^6.0.11",
+    "nodemailer": "^7.0.3",
+    "postgres": "^3.4.7"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/bun": "latest",
+    "@types/nodemailer": "^6.4.17",
+    "typescript": "^5.8.3"
+  }
+}
