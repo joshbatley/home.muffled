@@ -1,4 +1,4 @@
-.PHONY: all test run dev postgres-up postgres-down seed-admin frontend-install frontend-dev frontend-build
+.PHONY: all test run dev postgres-up postgres-down seed-admin web-install web-dev web-build
 
 all: test
 
@@ -15,16 +15,16 @@ seed-admin:
 	cd server && bun run seed-admin
 
 postgres-up:
-	docker compose up -d postgres
+	cd server && docker compose up -d postgres
 
 postgres-down:
-	docker compose down
+	cd server && docker compose down
 
-frontend-install:
-	cd frontend && bun install
+web-install:
+	cd web && bun install
 
-frontend-dev:
-	cd frontend && bun run dev
+web-dev:
+	cd web && bun run dev
 
-frontend-build:
-	cd frontend && bun run build
+web-build:
+	cd web && bun run build

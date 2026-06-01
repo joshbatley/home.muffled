@@ -2,7 +2,7 @@ import { readdir, readFile } from "fs/promises";
 import { join } from "path";
 import type postgres from "postgres";
 
-const MIGRATIONS_DIR = join(import.meta.dir, "../../../migrations");
+const MIGRATIONS_DIR = join(import.meta.dir, "../../migrations");
 
 async function ensureMigrationsTable(sql: postgres.Sql) {
   await sql`

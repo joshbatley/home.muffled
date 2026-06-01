@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useAuth } from "@home/auth-ts";
 import {
   ApiError,
   apiJSON,
@@ -7,13 +7,12 @@ import {
   postJSON,
   postNoContent,
 } from "../api/client";
-import { useAuth } from "../context/auth";
 
 type Role = { id: string; name: string };
 type Permission = { id: string; key: string; description: string };
 
 export default function RolesPermissionsPage() {
-  const { logout, refreshClaims } = useAuth();
+  const { refreshClaims } = useAuth();
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -139,26 +138,6 @@ export default function RolesPermissionsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="border-b border-gray-200 bg-white px-6 py-4">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <span className="font-semibold text-gray-900">home.muffled</span>
-          <div className="flex items-center gap-4">
-            <Link to="/me" className="text-sm text-gray-500 hover:text-gray-900">
-              Profile
-            </Link>
-            <Link to="/users" className="text-sm text-gray-500 hover:text-gray-900">
-              Users
-            </Link>
-            <button
-              onClick={() => void logout()}
-              className="text-sm text-gray-500 hover:text-gray-900"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-      </nav>
-
       <main className="mx-auto max-w-6xl space-y-6 px-6 py-10">
         <h1 className="text-xl font-semibold text-gray-900">Roles & Permissions</h1>
 
