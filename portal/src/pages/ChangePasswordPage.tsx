@@ -1,13 +1,12 @@
 import { FormEvent, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { ApiError, changePassword, refreshSession, useAuth } from "@home/auth-ts";
+import { supabase, useSession } from "@home/auth";
 import Input from "../components/Input";
 
 export default function ChangePasswordPage() {
-  const { user, logout, refreshClaims } = useAuth();
+  const { user, logout, refreshUser, setForcePasswordChanged } = useSession();
   const navigate = useNavigate();
 
-  const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -20,19 +19,27 @@ export default function ChangePasswordPage() {
     setSubmitting(true);
     setError(null);
 
-    try {
-      await changePassword(userId, {
-        old_password: oldPassword,
-        new_password: newPassword,
-      });
-      await refreshSession();
-      await refreshClaims();
-      navigate("/me", { replace: true });
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Request failed");
-    } finally {
+    const { error: authError } = await supabase.auth.updateUser({ password: newPassword });
+    if (authError) {
+      setError(authError.message);
       setSubmitting(false);
+      return;
     }
+
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ force_password_change: false })
+      .eq("id", userId);
+
+    setSubmitting(false);
+    if (profileError) {
+      setError(profileError.message);
+      return;
+    }
+
+    setForcePasswordChanged();
+    await refreshUser();
+    navigate("/me", { replace: true });
   }
 
   return (
@@ -42,19 +49,6 @@ export default function ChangePasswordPage() {
         <p className="mb-6 text-sm text-gray-500">Password change is required before continuing.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="old-password" className="mb-1 block text-sm font-medium text-gray-700">
-              Current password
-            </label>
-            <Input
-              id="old-password"
-              type="password"
-              required
-              autoComplete="current-password"
-              value={oldPassword}
-              onChange={(event) => setOldPassword(event.target.value)}
-            />
-          </div>
           <div>
             <label htmlFor="new-password" className="mb-1 block text-sm font-medium text-gray-700">
               New password

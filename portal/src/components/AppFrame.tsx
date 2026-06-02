@@ -1,8 +1,8 @@
 import { Link, Outlet } from "react-router-dom";
-import { hasRole, useAuth } from "@home/auth-ts";
+import { hasRole, useSession } from "@home/auth";
 
 export default function AppFrame({ children }: { children?: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user, logout } = useSession();
 
   return (
     <div className="min-h-screen bg-gray-50">

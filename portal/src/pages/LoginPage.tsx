@@ -1,10 +1,10 @@
 import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ApiError, useAuth } from "@home/auth-ts";
+import { useSession } from "@home/auth";
 import Input from "../components/Input";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login } = useSession();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -19,12 +19,8 @@ export default function LoginPage() {
     try {
       await login(email, password);
       navigate("/me", { replace: true });
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        setError("Invalid email or password.");
-      } else {
-        setError("Unable to sign in.");
-      }
+    } catch {
+      setError("Invalid email or password.");
     } finally {
       setSubmitting(false);
     }
@@ -63,12 +59,6 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="text-right">
-            <Link to="/forgot-password" className="text-sm text-gray-600 hover:text-gray-900">
-              Forgot password?
-            </Link>
-          </div>
-
           {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
           <button
@@ -79,6 +69,13 @@ export default function LoginPage() {
             {submitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
+
+        <Link
+          to="/forgot-password"
+          className="mt-4 block text-center text-sm text-gray-600 hover:text-gray-900"
+        >
+          Forgot password?
+        </Link>
       </div>
     </div>
   );

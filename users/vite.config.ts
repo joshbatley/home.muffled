@@ -6,13 +6,10 @@ export default defineConfig({
   plugins: [
     react(),
     federation({
-      name: "portalHost",
-      remotes: {
-        usersRemote: {
-          type: "module",
-          name: "usersRemote",
-          entry: "http://localhost:5174/remoteEntry.js",
-        },
+      name: "usersRemote",
+      filename: "remoteEntry.js",
+      exposes: {
+        "./UsersRoutes": "./src/remote/UsersRoutes.tsx",
       },
       shared: {
         react: { singleton: true },
@@ -23,7 +20,7 @@ export default defineConfig({
     }),
   ],
   server: {
-    port: 5173,
+    port: 5174,
   },
   build: {
     target: "esnext",

@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
-import { ApiError, forgotPassword } from "@home/auth-ts";
+import { supabase } from "@home/auth";
 import Input from "../components/Input";
 
 export default function ForgotPasswordPage() {
@@ -15,14 +15,15 @@ export default function ForgotPasswordPage() {
     setStatus(null);
     setError(null);
 
-    try {
-      await forgotPassword({ email });
-      setStatus("If this email exists, a reset link was sent.");
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Request failed");
-    } finally {
-      setSubmitting(false);
+    const redirectTo = `${window.location.origin}/reset-password`;
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+
+    setSubmitting(false);
+    if (resetError) {
+      setError(resetError.message);
+      return;
     }
+    setStatus("If this email exists, a reset link was sent.");
   }
 
   return (

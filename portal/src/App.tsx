@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { AuthProvider, useAuth } from "@home/auth-ts";
+import { SessionProvider, useSession } from "@home/auth";
 import AppFrame from "./components/AppFrame";
 import Loading from "./components/Loading";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -14,7 +14,7 @@ const UsersRoutesRemote = lazy(() => import("usersRemote/UsersRoutes"));
 const RESET_PASSWORD_PATHS = ["/reset-password", "/reset"];
 
 function LoginRoute() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading } = useSession();
   if (isLoading) return <Loading />;
   if (user?.forcePasswordChange) return <Navigate to="/change-password" replace />;
   if (user) return <Navigate to="/me" replace />;
@@ -24,7 +24,7 @@ function LoginRoute() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
+      <SessionProvider>
         <Routes>
           <Route path="/login" element={<LoginRoute />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -49,7 +49,7 @@ export default function App() {
             />
           </Route>
         </Routes>
-      </AuthProvider>
+      </SessionProvider>
     </BrowserRouter>
   );
 }
