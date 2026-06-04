@@ -1,16 +1,24 @@
-import { FormEvent, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { ApiError, resetPassword } from "@home/auth-ts";
+import { FormEvent, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "@home/auth";
 import Input from "../components/Input";
 
 export default function ResetPasswordPage() {
-  const [searchParams] = useSearchParams();
-  const token = useMemo(() => searchParams.get("token") || "", [searchParams]);
-
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [canReset, setCanReset] = useState(false);
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") setCanReset(true);
+    });
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session) setCanReset(true);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -18,26 +26,27 @@ export default function ResetPasswordPage() {
     setStatus(null);
     setError(null);
 
-    try {
-      await resetPassword({ token, new_password: newPassword });
-      setStatus("Password reset complete. You can now sign in.");
-      setNewPassword("");
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Request failed");
-    } finally {
-      setSubmitting(false);
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+
+    setSubmitting(false);
+    if (updateError) {
+      setError(updateError.message);
+      return;
     }
+    setStatus("Password reset complete. You can now sign in.");
+    setNewPassword("");
+    await supabase.auth.signOut();
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
         <h1 className="mb-2 text-xl font-semibold text-gray-900">Set new password</h1>
-        <p className="mb-6 text-sm text-gray-500">Reset token is read from the URL query.</p>
+        <p className="mb-6 text-sm text-gray-500">Open this page from the link in your email.</p>
 
-        {!token && (
-          <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            Missing token. Open the reset link from your email.
+        {!canReset && (
+          <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            Waiting for recovery session. Use the link from your email.
           </p>
         )}
 
@@ -62,7 +71,7 @@ export default function ResetPasswordPage() {
 
           <button
             type="submit"
-            disabled={submitting || !token}
+            disabled={submitting || !canReset}
             className="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
           >
             {submitting ? "Saving..." : "Reset password"}

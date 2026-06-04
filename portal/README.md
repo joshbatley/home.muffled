@@ -5,17 +5,22 @@ Shell host frontend.
 ## Responsibilities
 
 - owns top-level routing and shell frame
-- owns auth provider placement using `@home/auth-ts`
+- owns `SessionProvider` from `@home/auth`
 - loads users domain via module federation remote (`usersRemote/UsersRoutes`)
 
 ## Run
 
-Start `users/web` first, then start `portal`:
+Start `platform` (Supabase), apply migrations, then frontends:
 
 ```bash
-make dev-users-web   # :5174
-make dev-portal      # :5173
-# or: make dev-fe
+make platform-up
+make platform-migrate
+make dev
 ```
 
-Ensure the API is running (`make -C users run`) on `:8080`.
+Copy `portal/.env.example` → `portal/.env` and `users/.env.example` → `users/.env` (match `ANON_KEY` from `platform/.env`).
+
+```bash
+make dev-users    # :5174
+make dev-portal   # :5173
+```

@@ -42,3 +42,8 @@ monitoring/prometheus/data/*
 
 monitoring/grafana/data/*
 !monitoring/grafana/data/.gitkeep
+
+platform/.env
+platform/volumes/db/data/*
+!platform/volumes/db/data/.gitkeep
+platform/volumes/snippets/*

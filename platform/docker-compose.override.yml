@@ -1,0 +1,5 @@
+# home.muffled overrides (Studio on 54323 avoids Grafana on 3000)
+services:
+  studio:
+    ports:
+      - "54323:3000"
