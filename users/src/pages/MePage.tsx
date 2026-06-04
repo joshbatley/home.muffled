@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase, useSession } from "@home/auth";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function MePage() {
   const { user } = useSession();
@@ -31,29 +32,29 @@ export default function MePage() {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-3xl px-6 py-10">
-        <h1 className="mb-6 text-xl font-semibold text-gray-900">My profile</h1>
+        <h1 className="mb-6 font-mono text-xl font-normal text-foreground">my profile</h1>
 
-        {loading && <p className="text-sm text-gray-500">Loading profile...</p>}
+        {loading && <p className="text-sm text-muted-foreground">Loading profile...</p>}
 
-        {error && (
-          <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
-        )}
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
         {user && !loading && !error && (
-          <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-            <dl className="divide-y divide-gray-100">
-              <Row label="Email" value={user.email} />
-              <Row label="Display name" value={displayName || "-"} />
-              <Row label="ID" value={user.id} mono />
-              <Row label="Roles" value={user.roles.length ? user.roles.join(", ") : "-"} />
-              <Row
-                label="Permissions"
-                value={user.permissions.length ? user.permissions.join(", ") : "-"}
-              />
-            </dl>
-          </div>
+          <Card>
+            <CardContent className="p-0">
+              <dl className="divide-y divide-border-faint">
+                <Row label="email" value={user.email} />
+                <Row label="display name" value={displayName || "-"} />
+                <Row label="id" value={user.id} mono />
+                <Row label="roles" value={user.roles.length ? user.roles.join(", ") : "-"} />
+                <Row
+                  label="permissions"
+                  value={user.permissions.length ? user.permissions.join(", ") : "-"}
+                />
+              </dl>
+            </CardContent>
+          </Card>
         )}
       </main>
     </div>
@@ -71,8 +72,8 @@ function Row({
 }) {
   return (
     <div className="flex items-start px-6 py-4">
-      <dt className="w-40 shrink-0 text-sm font-medium text-gray-500">{label}</dt>
-      <dd className={`text-sm text-gray-900 ${mono ? "font-mono text-xs" : ""}`}>{value}</dd>
+      <dt className="w-40 shrink-0 font-mono text-xs text-muted-foreground">{label}</dt>
+      <dd className={`text-sm text-foreground ${mono ? "font-mono text-xs" : ""}`}>{value}</dd>
     </div>
   );
 }

@@ -1,7 +1,17 @@
 import { FormEvent, useEffect, useState } from "react";
 import { supabase, useSession } from "@home/auth";
-import { fieldClassName } from "../components/field";
 import type { Permission, Role } from "../types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function RolesPermissionsPage() {
   const { refreshUser } = useSession();
@@ -142,125 +152,140 @@ export default function RolesPermissionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-6xl space-y-6 px-6 py-10">
-        <h1 className="text-xl font-semibold text-gray-900">Roles & Permissions</h1>
+        <h1 className="font-mono text-xl font-normal text-foreground">roles & permissions</h1>
 
-        {loading && <p className="text-sm text-gray-500">Loading...</p>}
-        {error && <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-        {status && <p className="rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">{status}</p>}
+        {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        {status && <p className="text-sm text-u-green">{status}</p>}
 
         <section className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Roles</h2>
-            <form onSubmit={createRole} className="mb-4 flex gap-2">
-              <input
-                placeholder="Role name"
-                value={roleName}
-                onChange={(event) => setRoleName(event.target.value)}
-                className={fieldClassName}
-              />
-              <button className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white">Create</button>
-            </form>
+          <Card>
+            <CardHeader>
+              <CardTitle>roles</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={createRole} className="mb-4 flex gap-2">
+                <Input
+                  placeholder="role name"
+                  value={roleName}
+                  onChange={(event) => setRoleName(event.target.value)}
+                />
+                <Button type="submit">create</Button>
+              </form>
 
-            <div className="space-y-2">
-              {roles.map((role) => (
-                <div key={role.id} className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm">
-                  <span>{role.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => void deleteRole(role.id)}
-                    className="rounded-md border border-red-300 px-3 py-1 text-sm text-red-700"
+              <div className="space-y-2">
+                {roles.map((role) => (
+                  <div
+                    key={role.id}
+                    className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm"
                   >
-                    Delete
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+                    <span>{role.name}</span>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => void deleteRole(role.id)}
+                    >
+                      delete
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Permissions</h2>
-            <form onSubmit={createPermission} className="mb-4 space-y-2">
-              <input
-                placeholder="Permission key (e.g. users:admin)"
-                value={permissionKey}
-                onChange={(event) => setPermissionKey(event.target.value)}
-                className={fieldClassName}
-              />
-              <input
-                placeholder="Description"
-                value={permissionDescription}
-                onChange={(event) => setPermissionDescription(event.target.value)}
-                className={fieldClassName}
-              />
-              <button className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white">Create</button>
-            </form>
+          <Card>
+            <CardHeader>
+              <CardTitle>permissions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={createPermission} className="mb-4 space-y-2">
+                <Input
+                  placeholder="permission key (e.g. users:admin)"
+                  value={permissionKey}
+                  onChange={(event) => setPermissionKey(event.target.value)}
+                />
+                <Input
+                  placeholder="description"
+                  value={permissionDescription}
+                  onChange={(event) => setPermissionDescription(event.target.value)}
+                />
+                <Button type="submit">create</Button>
+              </form>
 
-            <div className="space-y-2">
-              {permissions.map((permission) => (
-                <div key={permission.id} className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm">
-                  <span>{permission.key}</span>
-                  <button
-                    type="button"
-                    onClick={() => void deletePermission(permission.id)}
-                    className="rounded-md border border-red-300 px-3 py-1 text-sm text-red-700"
+              <div className="space-y-2">
+                {permissions.map((permission) => (
+                  <div
+                    key={permission.id}
+                    className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm"
                   >
-                    Delete
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+                    <span>{permission.key}</span>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => void deletePermission(permission.id)}
+                    >
+                      delete
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </section>
 
-        <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">Role permission assignment</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <select
-              value={selectedRoleId}
-              onChange={(event) => setSelectedRoleId(event.target.value)}
-              className={fieldClassName}
-            >
-              <option value="">Select role</option>
-              {roles.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.name} ({role.id})
-                </option>
-              ))}
-            </select>
+        <Card>
+          <CardHeader>
+            <CardTitle>role permission assignment</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>role</Label>
+                <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.name} ({role.id})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <select
-              value={selectedPermissionId}
-              onChange={(event) => setSelectedPermissionId(event.target.value)}
-              className={fieldClassName}
-            >
-              <option value="">Select permission</option>
-              {permissions.map((permission) => (
-                <option key={permission.id} value={permission.id}>
-                  {permission.key} ({permission.id})
-                </option>
-              ))}
-            </select>
-          </div>
+              <div className="space-y-2">
+                <Label>permission</Label>
+                <Select value={selectedPermissionId} onValueChange={setSelectedPermissionId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="select permission" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {permissions.map((permission) => (
+                      <SelectItem key={permission.id} value={permission.id}>
+                        {permission.key} ({permission.id})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <div className="mt-4 flex gap-2">
-            <button
-              type="button"
-              onClick={assignPermissionToRole}
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white"
-            >
-              Assign permission
-            </button>
-            <button
-              type="button"
-              onClick={removePermissionFromRole}
-              className="rounded-md border border-red-300 px-4 py-2 text-sm text-red-700"
-            >
-              Remove permission
-            </button>
-          </div>
-        </section>
+            <div className="mt-4 flex gap-2">
+              <Button type="button" onClick={assignPermissionToRole}>
+                assign permission
+              </Button>
+              <Button type="button" variant="destructive" onClick={removePermissionFromRole}>
+                remove permission
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

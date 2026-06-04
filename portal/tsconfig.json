@@ -11,7 +11,13 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-    "strict": true
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@home/users/*": ["../users/src/*"],
+      "@home/auth": ["../lib/auth/src/index.ts"]
+    }
   },
   "include": ["src"]
 }

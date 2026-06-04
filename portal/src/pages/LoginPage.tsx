@@ -1,7 +1,10 @@
 import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSession } from "@home/auth";
-import Input from "../components/Input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
   const { login } = useSession();
@@ -20,63 +23,58 @@ export default function LoginPage() {
       await login(email, password);
       navigate("/me", { replace: true });
     } catch {
-      setError("Invalid email or password.");
+      setError("invalid email or password.");
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-6 text-xl font-semibold text-gray-900">home.muffled portal</h1>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>home.muffled portal</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">email</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <Input
-              id="email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <Input
-              id="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+            <Button type="submit" disabled={submitting} className="w-full">
+              {submitting ? "signing in..." : "sign in"}
+            </Button>
+          </form>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+          <Link
+            to="/forgot-password"
+            className="block text-center text-sm text-muted-foreground transition-opacity duration-[var(--d-drift)] hover:opacity-60"
           >
-            {submitting ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
-
-        <Link
-          to="/forgot-password"
-          className="mt-4 block text-center text-sm text-gray-600 hover:text-gray-900"
-        >
-          Forgot password?
-        </Link>
-      </div>
+            forgot password?
+          </Link>
+        </CardContent>
+      </Card>
     </div>
   );
 }

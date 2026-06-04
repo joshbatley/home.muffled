@@ -1,8 +1,18 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase, useSession } from "@home/auth";
-import { fieldClassName } from "../components/field";
 import type { Permission, Role, UserSummary } from "../types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function UserEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -165,144 +175,145 @@ export default function UserEditorPage() {
   if (!id) {
     return (
       <div className="p-8">
-        <Link to="/users" className="text-sm text-gray-600 underline">
-          Back to users
-        </Link>
+        <Button variant="link" size="sm" asChild>
+          <Link to="/users">back to users</Link>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-5xl space-y-6 px-6 py-10">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">Edit user</h1>
-          <button
-            className="text-sm text-gray-600 underline"
-            onClick={() => navigate("/users")}
-          >
-            Back
-          </button>
+          <h1 className="font-mono text-xl font-normal text-foreground">edit user</h1>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/users")}>
+            back
+          </Button>
         </div>
 
-        {loading && <p className="text-sm text-gray-500">Loading...</p>}
-        {error && <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-        {status && <p className="rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">{status}</p>}
+        {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        {status && <p className="text-sm text-u-green">{status}</p>}
 
         {user && !loading && (
           <>
-            <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Profile</h2>
-              <form onSubmit={handleSaveProfile} className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label htmlFor="profile-email" className="mb-1 block text-sm font-medium text-gray-700">Email</label>
-                  <input
-                    id="profile-email"
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    className={fieldClassName}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="profile-display-name" className="mb-1 block text-sm font-medium text-gray-700">Display name</label>
-                  <input
-                    id="profile-display-name"
-                    value={displayName}
-                    onChange={(event) => setDisplayName(event.target.value)}
-                    className={fieldClassName}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label htmlFor="profile-avatar-url" className="mb-1 block text-sm font-medium text-gray-700">Avatar URL</label>
-                  <input
-                    id="profile-avatar-url"
-                    value={avatarUrl}
-                    onChange={(event) => setAvatarUrl(event.target.value)}
-                    className={fieldClassName}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <button
-                    disabled={submitting}
-                    className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-                  >
-                    {submitting ? "Saving..." : "Save profile"}
-                  </button>
-                </div>
-              </form>
-            </section>
+            <Card>
+              <CardHeader>
+                <CardTitle>profile</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSaveProfile} className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="profile-email">email</Label>
+                    <Input
+                      id="profile-email"
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="profile-display-name">display name</Label>
+                    <Input
+                      id="profile-display-name"
+                      value={displayName}
+                      onChange={(event) => setDisplayName(event.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="profile-avatar-url">avatar url</Label>
+                    <Input
+                      id="profile-avatar-url"
+                      value={avatarUrl}
+                      onChange={(event) => setAvatarUrl(event.target.value)}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Button type="submit" disabled={submitting}>
+                      {submitting ? "saving..." : "save profile"}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
 
             <section className="grid gap-6 md:grid-cols-2">
-              <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                <h2 className="mb-3 text-lg font-semibold text-gray-900">Roles</h2>
-                <p className="mb-3 text-xs text-gray-500">Assign/remove by role ID.</p>
+              <Card>
+                <CardHeader>
+                  <CardTitle>roles</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-xs text-muted-foreground">Assign/remove by role ID.</p>
 
-                <div className="mb-3 flex gap-2">
-                  <select
-                    value={selectedRoleId}
-                    onChange={(event) => setSelectedRoleId(event.target.value)}
-                    className={fieldClassName}
-                  >
-                    <option value="">Select role</option>
-                    {roles.map((role) => (
-                      <option key={role.id} value={role.id}>
-                        {role.name} ({role.id})
-                      </option>
-                    ))}
-                  </select>
-                  <button type="button" onClick={assignRole} className="rounded-md bg-gray-900 px-3 py-2 text-sm text-white">
-                    Add
-                  </button>
-                </div>
+                  <div className="flex gap-2">
+                    <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roles.map((role) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.name} ({role.id})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" onClick={assignRole}>
+                      add
+                    </Button>
+                  </div>
 
-                <div className="flex gap-2">
-                  <input
-                    placeholder="Role ID to remove"
-                    value={removeRoleId}
-                    onChange={(event) => setRemoveRoleId(event.target.value)}
-                    className={fieldClassName}
-                  />
-                  <button type="button" onClick={removeRole} className="rounded-md border border-red-300 px-3 py-2 text-sm text-red-700">
-                    Remove
-                  </button>
-                </div>
-              </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="role id to remove"
+                      value={removeRoleId}
+                      onChange={(event) => setRemoveRoleId(event.target.value)}
+                    />
+                    <Button type="button" variant="destructive" onClick={removeRole}>
+                      remove
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                <h2 className="mb-3 text-lg font-semibold text-gray-900">Direct permissions</h2>
-                <p className="mb-3 text-xs text-gray-500">Grant/revoke by permission ID.</p>
+              <Card>
+                <CardHeader>
+                  <CardTitle>direct permissions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-xs text-muted-foreground">Grant/revoke by permission ID.</p>
 
-                <div className="mb-3 flex gap-2">
-                  <select
-                    value={selectedPermissionId}
-                    onChange={(event) => setSelectedPermissionId(event.target.value)}
-                    className={fieldClassName}
-                  >
-                    <option value="">Select permission</option>
-                    {permissions.map((permission) => (
-                      <option key={permission.id} value={permission.id}>
-                        {permission.key} ({permission.id})
-                      </option>
-                    ))}
-                  </select>
-                  <button type="button" onClick={grantPermission} className="rounded-md bg-gray-900 px-3 py-2 text-sm text-white">
-                    Add
-                  </button>
-                </div>
+                  <div className="flex gap-2">
+                    <Select value={selectedPermissionId} onValueChange={setSelectedPermissionId}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="select permission" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {permissions.map((permission) => (
+                          <SelectItem key={permission.id} value={permission.id}>
+                            {permission.key} ({permission.id})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" onClick={grantPermission}>
+                      add
+                    </Button>
+                  </div>
 
-                <div className="flex gap-2">
-                  <input
-                    placeholder="Permission ID to revoke"
-                    value={revokePermissionId}
-                    onChange={(event) => setRevokePermissionId(event.target.value)}
-                    className={fieldClassName}
-                  />
-                  <button type="button" onClick={revokePermission} className="rounded-md border border-red-300 px-3 py-2 text-sm text-red-700">
-                    Remove
-                  </button>
-                </div>
-              </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="permission id to revoke"
+                      value={revokePermissionId}
+                      onChange={(event) => setRevokePermissionId(event.target.value)}
+                    />
+                    <Button type="button" variant="destructive" onClick={revokePermission}>
+                      remove
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </section>
           </>
         )}

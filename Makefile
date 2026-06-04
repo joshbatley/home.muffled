@@ -15,11 +15,7 @@ test:
 dev: dev-fe
 
 dev-fe:
-	@echo "Starting users (:5174) and portal (:5173)"
-	@sh -c 'trap "kill 0" INT TERM EXIT; \
-		cd users && bun run dev & \
-		cd portal && bun run dev & \
-		wait'
+	cd portal && bun run dev
 
 dev-portal:
 	cd portal && bun run dev

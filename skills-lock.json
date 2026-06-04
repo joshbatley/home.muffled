@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "muffled-studio-design": {
+      "source": "muffled-studio/muffled.skills",
+      "sourceType": "github",
+      "skillPath": "skills/muffled-studio-design/SKILL.md",
+      "computedHash": "1bf3bc1bd90ab7b2738adc9ffef02cfa067fba89f77f9ba57482a90d7db810ef"
+    },
+    "muffled-ui": {
+      "source": "muffled-studio/muffled.skills",
+      "sourceType": "github",
+      "skillPath": "skills/muffled-ui/SKILL.md",
+      "computedHash": "4fb5fc662699003656ff7ae58a434ca40b041bb0b619a03a3ec8ac758d03b922"
+    }
+  }
+}

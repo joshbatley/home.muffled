@@ -2,8 +2,12 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@home/auth";
 import { adminCreateUser } from "../lib/adminCreateUser";
-import { fieldClassName } from "../components/field";
 import type { Role, UserSummary } from "../types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<UserSummary[]>([]);
@@ -70,109 +74,107 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-5xl space-y-6 px-6 py-10">
-        <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">Create user</h2>
-          <form onSubmit={handleCreateUser} className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label htmlFor="create-email" className="mb-1 block text-sm font-medium text-gray-700">Email</label>
-              <input
-                id="create-email"
-                type="email"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className={fieldClassName}
-              />
-            </div>
-            <div>
-              <label htmlFor="create-password" className="mb-1 block text-sm font-medium text-gray-700">Temporary password</label>
-              <input
-                id="create-password"
-                type="password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className={fieldClassName}
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <p className="mb-2 text-sm font-medium text-gray-700">Assign roles</p>
-              <div className="flex flex-wrap gap-3">
-                {roles.map((role) => (
-                  <label key={role.id} className="flex items-center gap-2 text-sm text-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={roleIds.includes(role.id)}
-                      onChange={() => toggleRole(role.id)}
-                    />
-                    {role.name}
-                  </label>
-                ))}
+        <Card>
+          <CardHeader>
+            <CardTitle>create user</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreateUser} className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="create-email">email</Label>
+                <Input
+                  id="create-email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
               </div>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="create-password">temporary password</Label>
+                <Input
+                  id="create-password"
+                  type="password"
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+              </div>
 
-            <div className="md:col-span-2">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-              >
-                {submitting ? "Creating..." : "Create user"}
-              </button>
-            </div>
-          </form>
-        </section>
+              <div className="md:col-span-2">
+                <p className="mb-2 font-mono text-xs text-muted-foreground">assign roles</p>
+                <div className="flex flex-wrap gap-4">
+                  {roles.map((role) => (
+                    <Label key={role.id} className="flex items-center gap-2 font-sans normal-case">
+                      <Checkbox
+                        checked={roleIds.includes(role.id)}
+                        onCheckedChange={() => toggleRole(role.id)}
+                      />
+                      {role.name}
+                    </Label>
+                  ))}
+                </div>
+              </div>
 
-        <section className="rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-200 px-6 py-4">
-            <h2 className="text-lg font-semibold text-gray-900">Users</h2>
-          </div>
+              <div className="md:col-span-2">
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? "creating..." : "create user"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
-          {loading && <p className="px-6 py-4 text-sm text-gray-500">Loading users...</p>}
+        <Card className="overflow-hidden p-0">
+          <CardHeader className="border-b border-border">
+            <CardTitle>users</CardTitle>
+          </CardHeader>
 
-          {error && (
-            <p className="m-6 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
-          )}
+          {loading && <p className="px-6 py-4 text-sm text-muted-foreground">Loading users...</p>}
+
+          {error && <p className="m-6 text-sm text-destructive">{error}</p>}
 
           {!loading && !error && (
             <table className="w-full text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50">
+              <thead className="border-b border-border bg-muted/30">
                 <tr>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">Email</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">Display name</th>
-                  <th className="px-6 py-3 text-left font-medium text-gray-500">Action</th>
+                  <th className="px-6 py-3 text-left font-mono text-xs font-normal text-muted-foreground">
+                    email
+                  </th>
+                  <th className="px-6 py-3 text-left font-mono text-xs font-normal text-muted-foreground">
+                    display name
+                  </th>
+                  <th className="px-6 py-3 text-left font-mono text-xs font-normal text-muted-foreground">
+                    action
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border-faint">
                 {users.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-6 py-6 text-center text-gray-400">
+                    <td colSpan={3} className="px-6 py-6 text-center text-muted-foreground">
                       No users found.
                     </td>
                   </tr>
                 )}
                 {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-gray-900">{user.email}</td>
-                    <td className="px-6 py-4 text-gray-600">{user.display_name || "-"}</td>
+                  <tr key={user.id} className="transition-opacity hover:opacity-60">
+                    <td className="px-6 py-4 text-foreground">{user.email}</td>
+                    <td className="px-6 py-4 text-muted-foreground">{user.display_name || "-"}</td>
                     <td className="px-6 py-4">
-                      <Link
-                        to={`/users/${user.id}`}
-                        className="text-sm text-gray-700 underline hover:text-gray-900"
-                      >
-                        Edit
-                      </Link>
+                      <Button variant="link" size="sm" asChild>
+                        <Link to={`/users/${user.id}`}>edit</Link>
+                      </Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
-        </section>
+        </Card>
       </main>
     </div>
   );

@@ -1,7 +1,10 @@
 import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@home/auth";
-import Input from "../components/Input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -27,42 +30,42 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-2 text-xl font-semibold text-gray-900">Reset password</h1>
-        <p className="mb-6 text-sm text-gray-500">Enter your email to receive a reset link.</p>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>reset password</CardTitle>
+          <CardDescription>Enter your email to receive a reset link.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">email</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <Input
-              id="email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-          </div>
+            {status && <p className="text-sm text-u-green">{status}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-          {status && <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{status}</p>}
-          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+            <Button type="submit" disabled={submitting} className="w-full">
+              {submitting ? "sending..." : "send reset link"}
+            </Button>
+          </form>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
+          <Link
+            to="/login"
+            className="block text-center text-sm text-muted-foreground transition-opacity duration-[var(--d-drift)] hover:opacity-60"
           >
-            {submitting ? "Sending..." : "Send reset link"}
-          </button>
-        </form>
-
-        <Link to="/login" className="mt-4 block text-center text-sm text-gray-600 hover:text-gray-900">
-          Back to login
-        </Link>
-      </div>
+            back to login
+          </Link>
+        </CardContent>
+      </Card>
     </div>
   );
 }

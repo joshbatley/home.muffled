@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { SessionProvider, useSession } from "@home/auth";
+import AdminRoute from "./components/AdminRoute";
 import AppFrame from "./components/AppFrame";
 import Loading from "./components/Loading";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -9,9 +10,16 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 
-const UsersRoutesRemote = lazy(() => import("usersRemote/UsersRoutes"));
+const MePage = lazy(() => import("@home/users/pages/MePage"));
+const UsersPage = lazy(() => import("@home/users/pages/UsersPage"));
+const UserEditorPage = lazy(() => import("@home/users/pages/UserEditorPage"));
+const RolesPermissionsPage = lazy(() => import("@home/users/pages/RolesPermissionsPage"));
 
 const RESET_PASSWORD_PATHS = ["/reset-password", "/reset"];
+
+function RemoteFallback() {
+  return <div className="p-6 text-sm text-muted-foreground">Loading...</div>;
+}
 
 function LoginRoute() {
   const { user, isLoading } = useSession();
@@ -37,16 +45,43 @@ export default function App() {
           </Route>
 
           <Route element={<ProtectedRoute />}>
-            <Route
-              path="*"
-              element={
-                <AppFrame>
-                  <Suspense fallback={<div className="p-6 text-sm text-gray-500">Loading app...</div>}>
-                    <UsersRoutesRemote />
+            <Route element={<AppFrame />}>
+              <Route
+                path="/me"
+                element={
+                  <Suspense fallback={<RemoteFallback />}>
+                    <MePage />
                   </Suspense>
-                </AppFrame>
-              }
-            />
+                }
+              />
+              <Route element={<AdminRoute />}>
+                <Route
+                  path="/users"
+                  element={
+                    <Suspense fallback={<RemoteFallback />}>
+                      <UsersPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/users/:id"
+                  element={
+                    <Suspense fallback={<RemoteFallback />}>
+                      <UserEditorPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/rbac"
+                  element={
+                    <Suspense fallback={<RemoteFallback />}>
+                      <RolesPermissionsPage />
+                    </Suspense>
+                  }
+                />
+              </Route>
+              <Route path="*" element={<Navigate to="/me" replace />} />
+            </Route>
           </Route>
         </Routes>
       </SessionProvider>

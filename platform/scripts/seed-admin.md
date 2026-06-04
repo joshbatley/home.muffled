@@ -15,4 +15,4 @@ WHERE u.email = 'admin@home.muffled'
 ON CONFLICT DO NOTHING;
 ```
 
-Or create user via admin UI after temporarily using service role in Studio.
+Or create user via doadmin UI after temporarily using service role in Studio.
