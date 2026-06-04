@@ -3,7 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>portal</title>
+    <title>muffled.home</title>
+    <link rel="icon" href="/logo-ink.svg" data-theme-icon />
+    <script>
+      (function(){try{var s=localStorage.getItem("theme");var t=s==="dark"||s==="light"?s:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";if(t==="dark")document.documentElement.classList.add("dark");var h=t==="dark"?"/logo-paper.svg":"/logo-ink.svg";document.querySelectorAll("link[data-theme-icon]").forEach(function(l){l.href=h})}catch(e){}})();
+    </script>
   </head>
   <body>
     <div id="root"></div>

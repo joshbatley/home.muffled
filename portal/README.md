@@ -24,3 +24,17 @@ Copy `portal/.env.example` → `portal/.env` and `users/.env.example` → `users
 make dev-portal   # :5173 (includes users UI)
 make dev-users    # :5174 (optional — standalone users app only)
 ```
+
+## muffled.ui components
+
+Registry: `@muffled` in `components.json`. Update a component in **portal** and **users** (same names in both apps):
+
+```bash
+cd portal
+bunx shadcn@latest add @muffled/<name> -y -o --overwrite
+
+cd ../users
+bunx shadcn@latest add @muffled/<name> -y -o --overwrite
+```
+
+Run `@muffled/theme` when refreshing tokens; component adds may merge `index.css` (portal keeps `@source "../../users/src"` in that file).

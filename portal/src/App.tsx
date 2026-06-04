@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { SessionProvider, useSession } from "@home/auth";
+import { ThemeProvider } from "@/lib/theme-provider";
 import AdminRoute from "./components/AdminRoute";
 import AppFrame from "./components/AppFrame";
 import Loading from "./components/Loading";
@@ -32,6 +33,7 @@ function LoginRoute() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ThemeProvider>
       <SessionProvider>
         <Routes>
           <Route path="/login" element={<LoginRoute />} />
@@ -85,6 +87,7 @@ export default function App() {
           </Route>
         </Routes>
       </SessionProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

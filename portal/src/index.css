@@ -12,6 +12,18 @@
     --font-sans: "Space Grotesk Variable", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
     --font-mono: "Space Mono", ui-monospace, monospace;
   }
+  html {
+    @apply font-sans;
+  }
+  * {
+    @apply outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  hr {
+    border-top-width: var(--bw);
+  }
 }
 
 @custom-variant dark (&:is(.dark *:not([data-theme="light"] *))) {
@@ -103,8 +115,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  --font-sans: Space Grotesk, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: Space Mono, ui-monospace, monospace;
   --default-border-width: var(--bw);
   --default-divide-width: var(--bw);
   --default-outline-width: var(--bw);
@@ -153,34 +165,64 @@
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 4px);
+  --d-snap: var(--d-snap);
+  --d-drift: var(--d-drift);
+  --ease-snap: var(--ease-snap);
+  --ease-drift: var(--ease-drift);
+  --sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --sidebar-primary: var(--sidebar-primary);
+  --sidebar-foreground: var(--sidebar-foreground);
+  --sidebar: var(--sidebar);
+  --chart-5: var(--chart-5);
+  --chart-4: var(--chart-4);
+  --chart-3: var(--chart-3);
+  --chart-2: var(--chart-2);
+  --chart-1: var(--chart-1);
+  --bw: var(--bw);
+  --destructive-foreground: var(--destructive-foreground);
+  --destructive: var(--destructive);
+  --accent-foreground: var(--accent-foreground);
+  --secondary-foreground: var(--secondary-foreground);
+  --primary-foreground: var(--primary-foreground);
+  --primary: var(--primary);
+  --popover-foreground: var(--popover-foreground);
+  --popover: var(--popover);
+  --card-foreground: var(--card-foreground);
+  --card: var(--card);
+  --foreground: var(--foreground);
+  --background: var(--background);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 html,
 body {
-  min-height: 100%;
+    min-height: 100%;
 }
 
 body {
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  font-size: 13px;
-  line-height: 1.55;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: rgba(26, 26, 26, 0.12);
-  color: var(--foreground);
+    background: rgba(26, 26, 26, 0.12);
+    color: var(--foreground);
 }
 
 .dark ::selection,
 [data-theme="dark"] ::selection {
-  background: rgba(245, 245, 245, 0.24);
+    background: rgba(245, 245, 245, 0.24);
 }
 
 [data-theme="light"] ::selection {
-  background: rgba(26, 26, 26, 0.12);
-  color: var(--foreground);
+    background: rgba(26, 26, 26, 0.12);
+    color: var(--foreground);
 }
 
 h1,
@@ -189,15 +231,15 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-weight: 400;
-  letter-spacing: -0.02em;
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-weight: 400;
+    letter-spacing: -0.02em;
 }
 
 h4,
 h5,
 h6 {
-  font-weight: 700;
+    font-weight: 700;
 }
 
 @layer base {
@@ -212,4 +254,85 @@ h6 {
   hr {
     border-top-width: var(--bw);
   }
+}
+
+:root {
+  --ink: #1a1a1a;
+  --paper: #f5f5f5;
+  --u-red: #c0392b;
+  --u-green: #27ae60;
+  --u-amber: #d4830a;
+  --u-blue: #2471a3;
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper);
+  --card-foreground: var(--ink);
+  --popover: var(--paper);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: rgba(26, 26, 26, 0.06);
+  --secondary-foreground: var(--ink);
+  --muted: rgba(26, 26, 26, 0.06);
+  --muted-foreground: rgba(26, 26, 26, 0.72);
+  --accent: rgba(26, 26, 26, 0.06);
+  --accent-foreground: var(--ink);
+  --destructive: var(--u-red);
+  --destructive-foreground: var(--paper);
+  --border: rgba(26, 26, 26, 0.24);
+  --border-strong: rgba(26, 26, 26, 0.56);
+  --border-faint: rgba(26, 26, 26, 0.12);
+  --input: rgba(26, 26, 26, 0.24);
+  --ring: rgba(26, 26, 26, 0.56);
+  --radius: 6px;
+  --bw: 0.5px;
+  --chart-1: var(--u-blue);
+  --chart-2: var(--u-green);
+  --chart-3: var(--u-amber);
+  --chart-4: var(--u-red);
+  --chart-5: var(--ink);
+  --sidebar: var(--paper);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: rgba(26, 26, 26, 0.06);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: rgba(26, 26, 26, 0.24);
+  --sidebar-ring: rgba(26, 26, 26, 0.56);
+  --ease-drift: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-snap: cubic-bezier(0.2, 0, 0, 1);
+  --d-drift: 220ms;
+  --d-snap: 90ms;
+}
+
+.dark {
+  --background: var(--ink);
+  --foreground: var(--paper);
+  --card: var(--ink);
+  --card-foreground: var(--paper);
+  --popover: var(--ink);
+  --popover-foreground: var(--paper);
+  --primary: var(--paper);
+  --primary-foreground: var(--ink);
+  --secondary: rgba(245, 245, 245, 0.12);
+  --secondary-foreground: var(--paper);
+  --muted: rgba(245, 245, 245, 0.12);
+  --muted-foreground: rgba(245, 245, 245, 0.72);
+  --accent: rgba(245, 245, 245, 0.12);
+  --accent-foreground: var(--paper);
+  --destructive: var(--u-red);
+  --destructive-foreground: var(--paper);
+  --border: rgba(245, 245, 245, 0.24);
+  --border-strong: rgba(245, 245, 245, 0.56);
+  --border-faint: rgba(245, 245, 245, 0.12);
+  --input: rgba(245, 245, 245, 0.24);
+  --ring: rgba(245, 245, 245, 0.56);
+  --sidebar: var(--ink);
+  --sidebar-foreground: var(--paper);
+  --sidebar-primary: var(--paper);
+  --sidebar-primary-foreground: var(--ink);
+  --sidebar-accent: rgba(245, 245, 245, 0.12);
+  --sidebar-accent-foreground: var(--paper);
+  --sidebar-border: rgba(245, 245, 245, 0.24);
+  --sidebar-ring: rgba(245, 245, 245, 0.56);
 }
