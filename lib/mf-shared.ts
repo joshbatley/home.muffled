@@ -13,20 +13,18 @@ function req(pkg: Pkg, name: string) {
 
 export function createMfSharedOptions(appDir: string, role: "host" | "remote") {
   const pkg = pkgFrom(appDir);
-  const eager = role === "host";
-  const base = {
-    singleton: true as const,
-    ...(eager ? { eager: true as const } : {}),
-  };
+  const isHost = role === "host";
+  const singleton = { singleton: true as const };
+  const eager = isHost ? { eager: true as const } : {};
 
   return {
-    react: { ...base, requiredVersion: req(pkg, "react") },
-    "react-dom": { ...base, requiredVersion: req(pkg, "react-dom") },
-    "react/jsx-runtime": { ...base },
-    "react/jsx-dev-runtime": { ...base },
-    "react-router-dom": { ...base, requiredVersion: req(pkg, "react-router-dom") },
-    "@home/auth": { ...base },
+    react: { ...singleton, ...eager, requiredVersion: req(pkg, "react") },
+    "react/": { singleton: true },
+    "react-dom": { ...singleton, ...eager, requiredVersion: req(pkg, "react-dom") },
+    "react-dom/": { singleton: true },
+    "react-router-dom": { ...singleton, ...eager, requiredVersion: req(pkg, "react-router-dom") },
+    "@home/auth": { ...singleton, ...eager, requiredVersion: req(pkg, "@home/auth") },
   };
 }
 
-export const mfDedupe = ["react", "react-dom", "react-router-dom"] as const;
+export const mfDedupe = ["react", "react-dom", "react-router-dom", "@home/auth"] as const;

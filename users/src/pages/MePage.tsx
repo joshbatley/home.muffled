@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { supabase, useSession } from "@home/auth";
+import { supabase, type AppUser } from "@home/auth";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default function MePage() {
-  const { user } = useSession();
+type MePageProps = {
+  user: AppUser | null;
+};
+
+export default function MePage({ user }: MePageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>("");

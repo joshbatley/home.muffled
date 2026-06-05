@@ -7,6 +7,7 @@ import { federation } from "@module-federation/vite";
 import { createMfSharedOptions, mfDedupe } from "../lib/mf-shared";
 
 const appDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(appDir, "..");
 
 export default defineConfig({
   resolve: {
@@ -15,11 +16,19 @@ export default defineConfig({
     },
     dedupe: [...mfDedupe],
   },
+  esbuild: {
+    target: "chrome89",
+  },
+  optimizeDeps: {
+    include: ["@supabase/supabase-js"],
+    esbuildOptions: {
+      target: "chrome89",
+    },
+  },
   plugins: [
-    react(),
-    tailwindcss(),
     federation({
       dts: false,
+      dev: { disableDynamicRemoteTypeHints: true, remoteHmr: true },
       name: "usersRemote",
       filename: "remoteEntry.js",
       exposes: {
@@ -30,11 +39,25 @@ export default defineConfig({
       },
       shared: createMfSharedOptions(appDir, "remote"),
     }),
+    react({ exclude: [/lib\/auth\/dist/] }),
+    tailwindcss(),
   ],
   server: {
     port: 5174,
+    strictPort: true,
+    origin: "http://localhost:5174",
+    // Dev remote modules execute in the portal host page; Fast Refresh breaks cross-origin.
+    hmr: false,
+    fs: {
+      allow: [repoRoot],
+    },
+  },
+  preview: {
+    port: 5174,
+    strictPort: true,
+    cors: true,
   },
   build: {
-    target: "esnext",
+    target: "chrome89",
   },
 });

@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { supabase, useSession } from "@home/auth";
+import { supabase } from "@home/auth";
 import type { Permission, Role } from "../types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,8 +13,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function RolesPermissionsPage() {
-  const { refreshUser } = useSession();
+type RolesPermissionsPageProps = {
+  refreshUser: () => Promise<void>;
+};
+
+export default function RolesPermissionsPage({ refreshUser }: RolesPermissionsPageProps) {
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
