@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { supabase, useSession } from "@home/auth";
+import { supabase } from "@home/auth";
 import type { Permission, Role, UserSummary } from "../types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,10 +14,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function UserEditorPage() {
+type UserEditorPageProps = {
+  refreshUser: () => Promise<void>;
+};
+
+export default function UserEditorPage({ refreshUser }: UserEditorPageProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { refreshUser } = useSession();
 
   const [user, setUser] = useState<UserSummary | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);

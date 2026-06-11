@@ -1,6 +1,6 @@
 ---
 name: muffled-ui
-description: Install and compose @muffled components from ui.muffled.studio. Use when adding registry components, wiring theme/tokens, forms, floating menus, or styling UI in a consumer app.
+description: Install and compose @muffled components from ui.muffled.studio. Use when adding registry components, wiring theme/tokens, forms, floating menus, or styling UI in a consumer app. Avoid editing pulled registry files; push fixes upstream to muffled.ui and keep project-specific changes in app code.
 paths:
   - "components.json"
   - "**/*.tsx"
@@ -100,6 +100,23 @@ These break the system and fight installed components:
 ## Updating components
 
 Re-run `bunx shadcn@latest add @muffled/<name>` to refresh a component. Diff carefully if you have local edits on generated files.
+
+## Local edits vs upstream
+
+Installed registry files are **copies** from [muffled.ui](https://github.com/muffled-studio/muffled.ui). Prefer not to edit them in the consumer app.
+
+| Change | In consumer app | Upstream |
+|--------|-----------------|----------|
+| Project-only (props, layout, composition, app-specific wrappers) | Yes — edit your code, not the pulled file | Not needed |
+| Bug fix, token/style alignment, accessibility, shared behaviour | Only if unavoidable; keep the diff minimal | **Yes** — fix in muffled.ui, then reinstall |
+
+When you must patch a pulled component (fix or style update):
+
+1. Make the smallest change that solves the problem.
+2. Tell the user to **push the same fix upstream** to muffled.ui so the next `shadcn add` does not wipe it.
+3. Do not refactor or restyle pulled files for convenience — wrap or compose in app code instead.
+
+Do not treat consumer copies as the source of truth for the design system.
 
 ## Install this skill (Cursor + Claude)
 
